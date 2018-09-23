@@ -81,72 +81,90 @@ def main():
     lonstn = lst_stn['lon'].tolist()
 
     nstn = len(stn_names)
+    '''stn_names = 'imau09'
+    latstn = -75.0
+    lonstn = 0.0
+    nstn = 1'''
+
+    year = '2009'
+    month = '12'
+    days = ['01','02','03','04','05','06','07','08','09','10',
+    '11','12','13','14','15','16','17','18','19','20',
+    '21','22','23','24','25','26','27','28','29','30','31']
 
 
     #main function
     for i in range(nstn):
-        sw_dn = []
-        sw_dn_final = [None]*24
         stn = stn_names[i]
         lat_deg = latstn[i]
         lon_deg = lonstn[i]
-        #print(stn, lat_deg, lon_deg)
-        #break
-        for sfx in ['A', 'D']:
-            for fn in glob.iglob(indir+stn+'_'+'????????'+'_'+sfx+'.nc'):
+        '''stn = stn_names
+        lat_deg = latstn
+        lon_deg = lonstn'''
 
-                fin = xr.open_dataset(fn)
+        for day in days:
+            try:
+                sw_dn = []
+                sw_dn_final = [None]*24
+                for sfx in ['A', 'D']:
+                    for fn in glob.iglob(indir+stn+'_'+year+month+day+'_'+sfx+'.nc'):
+                        print(fn)
 
-                for hr in range(24):
-                    dtime = datetime.strptime(fn.split('_')[1], "%Y%m%d") + timedelta(hours=hr)
+                        fin = xr.open_dataset(fn)
 
-                    #fo = outdir+stn+'_'+dtime.strftime('%Y%m%d:%H')+fn[-5:]
-                    fo = outdir+stn+'_'+dtime.strftime('%Y%m%d')+'.txt'
+                        for hr in range(24):
+                            dtime = datetime.strptime(fn.split('_')[1], "%Y%m%d") + timedelta(hours=hr)
 
-                    sza = sunposition.sunpos(dtime, lat_deg, lon_deg, 0)[1]
-                    cossza = np.cos(np.radians(sza))
+                            #fo = outdir+stn+'_'+dtime.strftime('%Y%m%d:%H')+fn[-5:]
+                            fo = outdir+stn+'_'+dtime.strftime('%Y%m%d')+'.txt'
 
-                    tmp = fin['t'].values
-                    #ts = fin['sfc_tmp'].values
-                    ts = fin['ts'].values
-                    plev = fin['plev'].values
-                    #ps = fin['sfc_prs'].values
-                    ps = fin['ps'].values
+                            sza = sunposition.sunpos(dtime, lat_deg, lon_deg, 0)[1]
+                            cossza = np.cos(np.radians(sza))
 
-                    state = make_column(lev=plev, ps=ps, tmp=tmp, ts=ts)
+                            tmp = fin['t'].values
+                            #ts = fin['sfc_tmp'].values
+                            ts = fin['ts'].values
+                            plev = fin['plev'].values
+                            #ps = fin['sfc_prs'].values
+                            ps = fin['ps'].values
 
-                    o3 = fin['o3'].values
-                    absorber_vmr['O3'] = o3
+                            state = make_column(lev=plev, ps=ps, tmp=tmp, ts=ts)
 
-                    h2o_q = fin['q'].values
+                            o3 = fin['o3'].values
+                            absorber_vmr['O3'] = o3
 
-                    rad = climlab.radiation.RRTMG(name='Radiation', state=state, specific_humidity=h2o_q, albedo=alb, coszen=cossza, absorber_vmr=absorber_vmr, emissivity=emis, S0=solar_constant, icld=0)
-                    rad.compute_diagnostics()
+                            h2o_q = fin['q'].values
 
-                    dout = rad.to_xarray(diagnostics=True)
-                    sw_dn.append(dout['SW_flux_down_clr'].values[-1])
-                    #break
-                    #dout.to_netcdf(fo)
-        count = 0
-        while count < 24:
-            #sw_dn_final[count] = [(g+h)/2.0 for g,h in zip(sw_dn[count], sw_dn[count+24])]
-            sw_dn_final[count] = (sw_dn[count]+sw_dn[count+24])/2.0
-            count += 1
+                            rad = climlab.radiation.RRTMG(name='Radiation', state=state, specific_humidity=h2o_q, albedo=alb, coszen=cossza, absorber_vmr=absorber_vmr, emissivity=emis, S0=solar_constant, icld=0)
+                            rad.compute_diagnostics()
 
-        with open(fo, 'wb') as outfile:
-            wr = csv.writer(outfile)
-            wr.writerow(sw_dn_final)
-        
-        #np.savetxt(fo, sw_dn_final, delimiter=",", fmt='%s')
+                            dout = rad.to_xarray(diagnostics=True)
+                            sw_dn.append(dout['SW_flux_down_clr'].values[-1])
+                            #break
+                            #dout.to_netcdf(fo)
+                
+                count = 0
+                while count < 24:
+                    #sw_dn_final[count] = [(g+h)/2.0 for g,h in zip(sw_dn[count], sw_dn[count+24])]
+                    sw_dn_final[count] = (sw_dn[count]+sw_dn[count+24])/2.0
+                    count += 1
 
-        #outfile = open(fo, 'w')
-        #myString = ",".join(map(str,sw_dn_final))
-        #outfile.write("%s," % myString)
-        
-        #for item in sw_dn_final:
-        #    outfile.write("%s," % item)
+                with open(fo, 'w') as outfile:
+                    wr = csv.writer(outfile)
+                    wr.writerow(sw_dn_final)
+                #print(fo)
+                #np.savetxt(fo, sw_dn_final, delimiter=",", fmt='%s')
 
-        break
+                #outfile = open(fo, 'w')
+                #myString = ",".join(map(str,sw_dn_final))
+                #outfile.write("%s," % myString)
+                
+                #for item in sw_dn_final:
+                #    outfile.write("%s," % item)
+
+                #break
+            except:
+                pass
 
 
 if __name__ == '__main__':

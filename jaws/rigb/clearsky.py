@@ -97,9 +97,11 @@ def write_to_file(cons_clr_hrs, daylight, out_file, year, day_of_year, count):
             return final_hrs
 
 
+#def main(args):
 def main():
     global tg_fsds, dat_sza, dat_fill, hrs, hours, out_file, year, day_of_year, count
 
+    #infile = args.input_file
     infile = 'UPE-L.nc'
     out_file = "cleardays.txt"
 
@@ -166,5 +168,5 @@ def main():
                 continue
 
 
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+#    main()

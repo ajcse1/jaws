@@ -1,0 +1,5 @@
+stn,lat,lon,wang_name
+imauant_aws09,-75.0,0.0,imau-aws09
+imauant_aws14,-67.02,-61.5,imau-aws14
+imauant_aws15,-67.57,-62.15,imau-aws15
+imauant_aws16,-71.95,23.33,imau-aws16
