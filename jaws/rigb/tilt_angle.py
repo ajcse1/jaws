@@ -18,7 +18,8 @@ def deg_to_rad(list_deg):
     return list_rad
 
 
-def main():
+#def main():
+def main(dataset, latitude, longitude):
     ddr = 0.25
     rho = 0.8
     smallest_double = 2.2250738585072014e-308
@@ -33,12 +34,16 @@ def main():
     dir_rrtm = 'rrtm-airx3std/'
     stn = 'UPE-L'
 
-    ds = xr.open_dataset('promice_Upernavik-L_20090817_20170916.nc')
+    #ds = xr.open_dataset('promice_Upernavik-L_20090817_20170916.nc')
+    ds = dataset
     df = ds.to_dataframe()
 
-    latitude = df['latitude'][0][0]
-    longitude = df['longitude'][0][0]
+    #latitude = df['latitude'][0][0]
+    #longitude = df['longitude'][0][0]
+    lat = latitude
+    lon = longitude
 
+    fsds_adjusted = []
 
     for line in clrprd:
         clrdate = line.split('_')[0]
@@ -71,11 +76,11 @@ def main():
         sza=[]
         for hour in hours:
             dtime = datetime(year,month,day,hour,0)
-            az.append(sunposition.sunpos(dtime, latitude, longitude, 0)[0])
-            sza.append(sunposition.sunpos(dtime, latitude, longitude, 0)[1])
+            az.append(sunposition.sunpos(dtime, lat, lon, 0)[0])
+            sza.append(sunposition.sunpos(dtime, lat, lon, 0)[1])
             dtime = datetime(year,month,day,hour,30)
-            az.append(sunposition.sunpos(dtime, latitude, longitude, 0)[0])
-            sza.append(sunposition.sunpos(dtime, latitude, longitude, 0)[1])
+            az.append(sunposition.sunpos(dtime, lat, lon, 0)[0])
+            sza.append(sunposition.sunpos(dtime, lat, lon, 0)[1])
 
         az = [(i-180) for i in az]
 
@@ -172,8 +177,13 @@ def main():
         top_pair = best_pairs[num_spikes.index(min(num_spikes))]
         print(top_pair)
         #print('***********')
+        fsds_adjusted.append(fsds_toppair_dict[top_pair])
+        
+    ds['fsds_adjusted'] = 'time', fsds_adjusted
+
+    return ds
 
 
 
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+#    main()
