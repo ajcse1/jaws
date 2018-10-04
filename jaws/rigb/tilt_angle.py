@@ -44,6 +44,7 @@ def main(dataset, latitude, longitude):
     lon = longitude
 
     fsds_adjusted = []
+    fsds_diff = []
 
     for line in clrprd:
         clrdate = line.split('_')[0]
@@ -178,8 +179,10 @@ def main(dataset, latitude, longitude):
         print(top_pair)
         #print('***********')
         fsds_adjusted.append(fsds_toppair_dict[top_pair])
+        fsds_diff.append([x-y for x,y in zip(fsds_adjusted, fsds_jaws)])
         
     ds['fsds_adjusted'] = 'time', fsds_adjusted
+    ds['fsds_diff'] = 'time', fsds_diff
 
     return ds
 
