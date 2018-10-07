@@ -62,7 +62,7 @@ def haversine_np(latlon1, latlon2):
 
 def getStnLatLonName(station_file):
     lst_stn = pd.read_csv(station_file)
-    stn_names = lst_stn['wang_name'].tolist()
+    stn_names = lst_stn['stn_name'].tolist()
 
     latstn = lst_stn['lat'].tolist()
     lonstn = lst_stn['lon'].tolist()
@@ -84,7 +84,7 @@ def main():
     pin, tin, qin = ([None]*(nplev+1) for i in range(3))
     sfxs = ['A', 'D']
     q_top = 1e-7
-    stn_names, lat_lon_stn = getStnLatLonName('stn_gp_jaws_edited.txt')
+    stn_names, lat_lon_stn = getStnLatLonName('../resources/stations_radiation.txt')
 
     #for infile in glob.iglob(indir+'*.hdf'):
     for infile in glob.iglob(indir+'AIRS.2009.12.*.hdf'):
