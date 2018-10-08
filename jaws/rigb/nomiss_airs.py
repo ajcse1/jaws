@@ -180,17 +180,25 @@ def main():
                         
                         return var_out
 
-                    #print qin
-                    tout = log_interpolation(tin)
-                    qout = log_interpolation(qin)
-                    
-                    #Convert q_mmr to q_specific-humidity
-                    qout_q = [beta/(beta+1) for beta in qout]
+                    try:
+                        #print qin
+                        tout = log_interpolation(tin)
+                        qout = log_interpolation(qin)
+
+                        #Convert q_mmr to q_specific-humidity
+                        qout_q = [beta/(beta+1) for beta in qout]
+                    except:
+                        tout = tin[:-1]
+                        qout_q = qin[:-1]
 
                     #Ozone
                     v_o3_airs = 'O3_VMR_TqJ_'+sfx
                     o3_airs = ds_sub_temp[v_o3_airs].values.tolist()[::-1]
-                    o3_out = log_interpolation(o3_airs, plev = plev, pout = pout)
+
+                    try:
+                        o3_out = log_interpolation(o3_airs, plev = plev, pout = pout)
+                    except:
+                        o3_out = o3_airs
                     #print(o3_out)
 
 
