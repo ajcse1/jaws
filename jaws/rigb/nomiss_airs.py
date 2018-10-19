@@ -71,6 +71,35 @@ def get_stn_latlonname(station_file):
     return stn_names, lat_lon_stn
 
 
+def log_interpolation(var_name, **kwargs):
+    var_in = np.array(var_name, dtype=np.float64)
+    nans, x = np.isnan(var_in), lambda z: z.nonzero()[0]
+    if var_name == tin:
+        var_in[nans] = np.exp(np.interp(np.log(x(nans)), np.log(x(~nans)), np.log(var_in[~nans])))
+
+        var_out = var_in[:-1]
+
+    elif var_name == qin:
+        var_in[nans] = np.interp(x(nans), x(~nans), var_in[~nans])
+        var_out = var_in[:-1]
+    elif var_name == o3_airs:
+        '''pout_rmvmsng = pout
+        nan_idx = np.argwhere(np.isnan(np.array(o3_airs)))
+        nan_idx = [ijk for ijk in nan_idx]
+        for idx in sorted(nan_idx, reverse=True):
+            del pout_rmvmsng[int(idx)]
+
+        print(len(pout_rmvmsng))
+        print(len(var_in[~nans]))'''
+
+        var_in[nans] = np.interp(x(nans), x(~nans), var_in[~nans])
+        #var_in = np.exp(np.interp(np.log(plev), np.log(pout_rmvmsng), np.log(var_in[~nans])))
+        #var_in = np.exp(np.interp(np.log(plev), np.log(pout), np.log(var_in)))
+        var_out = var_in
+
+    return var_out
+
+
 def main():
     #indir = './'
     indir = '../../../../data/wenshanw/airs/hdf_airx3std/'
@@ -81,6 +110,7 @@ def main():
     q_top = 1e-7
     sfxs = ['A', 'D']
 
+    global tin, qin, o3_airs
     pin, tin, qin = ([None]*(nplev+1) for _ in range(3))
 
     stn_names, lat_lon_stn = get_stn_latlonname('../resources/stations_radiation.txt')
@@ -158,34 +188,6 @@ def main():
                 pin = pd.Series(pin)
                 pin = pin.interpolate(limit_direction='both').values.tolist()
                 pout = pin[:-1]
-
-                def log_interpolation(var_name, **kwargs):
-                    var_in = np.array(var_name, dtype=np.float64)
-                    nans, x = np.isnan(var_in), lambda z: z.nonzero()[0]
-                    if var_name == tin:
-                        var_in[nans] = np.exp(np.interp(np.log(x(nans)), np.log(x(~nans)), np.log(var_in[~nans])))
-
-                        var_out = var_in[:-1]
-
-                    elif var_name == qin:
-                        var_in[nans] = np.interp(x(nans), x(~nans), var_in[~nans])
-                        var_out = var_in[:-1]
-                    elif var_name == o3_airs:
-                        '''pout_rmvmsng = pout
-                        nan_idx = np.argwhere(np.isnan(np.array(o3_airs)))
-                        nan_idx = [ijk for ijk in nan_idx]
-                        for idx in sorted(nan_idx, reverse=True):
-                            del pout_rmvmsng[int(idx)]
-                
-                        print(len(pout_rmvmsng))
-                        print(len(var_in[~nans]))'''
-
-                        var_in[nans] = np.interp(x(nans), x(~nans), var_in[~nans])
-                        #var_in = np.exp(np.interp(np.log(plev), np.log(pout_rmvmsng), np.log(var_in[~nans])))
-                        #var_in = np.exp(np.interp(np.log(plev), np.log(pout), np.log(var_in)))
-                        var_out = var_in
-
-                    return var_out
 
                 try:
                     tout = log_interpolation(tin)
