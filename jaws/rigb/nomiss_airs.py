@@ -189,16 +189,14 @@ def main():
                 pin = pin.interpolate(limit_direction='both').values.tolist()
                 pout = pin[:-1]
 
-                try:
+                # If all values are missing for any variable, skip that day
+                if not any(tin) or not any(qin) or not any(o3_airs):
+                    continue
+                else:
                     tout = log_interpolation(tin)
                     qout = log_interpolation(qin)
                     qout_q = [beta/(beta+1) for beta in qout] # Convert q_mmr to q_specific-humidity
                     o3_out = log_interpolation(o3_airs, plev = plev, pout = pout)
-
-                except:  # If all values are missing, no interpolation
-                    tout = tin[:-1]
-                    qout_q = qin[:-1]
-                    o3_out = o3_airs
 
                 # Write variables to xarray-dataset
                 ds = xr.Dataset({'plev': ('PLEV', pout), 't': ('PLEV', tout), 'q': ('PLEV', qout_q),
