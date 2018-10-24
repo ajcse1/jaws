@@ -68,8 +68,8 @@ def main():
     aod[5, 0, :7] = 0.0077/7
 
     # stn names and lat/lon
-    lst_stn = pd.read_csv('stn_gp_jaws_edited.txt')
-    stn_names = lst_stn['wang_name'].tolist()
+    lst_stn = pd.read_csv('stations_radiation.txt')
+    stn_names = lst_stn['stn_name'].tolist()
     latstn = lst_stn['lat'].tolist()
     lonstn = lst_stn['lon'].tolist()
 
@@ -79,8 +79,10 @@ def main():
     lonstn = 0.0
     nstn = 1'''
 
-    year = '2009'
-    month = '12'
+    start_year = 2010
+    end_year = 2017
+    years = [str(i) for i in list(range(start_year, end_year, 1))]
+    months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
     days = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10',
             '11', '12', '13', '14', '15', '16', '17', '18', '19', '20',
             '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31']
@@ -94,71 +96,73 @@ def main():
         lat_deg = latstn
         lon_deg = lonstn'''
 
-        for day in days:
-            try:
-                sw_dn = []
-                sw_dn_final = [None]*24
-                for sfx in ['A', 'D']:
-                    for fn in glob.iglob(indir+stn+'_'+year+month+day+'_'+sfx+'.nc'):
-                        print(fn)
+        for year in years:
+            for month in months:
+                for day in days:
+                    try:
+                        sw_dn = []
+                        sw_dn_final = [None]*24
+                        for sfx in ['A', 'D']:
+                            for fn in glob.iglob(indir+stn+'_'+year+month+day+'_'+sfx+'.nc'):
+                                print(fn)
 
-                        fin = xr.open_dataset(fn)
+                                fin = xr.open_dataset(fn)
 
-                        for hr in range(24):
-                            dtime = datetime.strptime(fn.split('_')[1], "%Y%m%d") + timedelta(hours=hr)
+                                for hr in range(24):
+                                    dtime = datetime.strptime(fn.split('_')[1], "%Y%m%d") + timedelta(hours=hr)
 
-                            # fo = outdir+stn+'_'+dtime.strftime('%Y%m%d:%H')+fn[-5:]
-                            fo = outdir+stn+'_'+dtime.strftime('%Y%m%d')+'.txt'
+                                    # fo = outdir+stn+'_'+dtime.strftime('%Y%m%d:%H')+fn[-5:]
+                                    fo = outdir+stn+'_'+dtime.strftime('%Y%m%d')+'.txt'
 
-                            sza = sunposition.sunpos(dtime, lat_deg, lon_deg, 0)[1]
-                            cossza = np.cos(np.radians(sza))
+                                    sza = sunposition.sunpos(dtime, lat_deg, lon_deg, 0)[1]
+                                    cossza = np.cos(np.radians(sza))
 
-                            tmp = fin['t'].values
-                            # ts = fin['sfc_tmp'].values
-                            ts = fin['ts'].values
-                            plev = fin['plev'].values
-                            # ps = fin['sfc_prs'].values
-                            ps = fin['ps'].values
+                                    tmp = fin['t'].values
+                                    # ts = fin['sfc_tmp'].values
+                                    ts = fin['ts'].values
+                                    plev = fin['plev'].values
+                                    # ps = fin['sfc_prs'].values
+                                    ps = fin['ps'].values
 
-                            state = make_column(lev=plev, ps=ps, tmp=tmp, ts=ts)
+                                    state = make_column(lev=plev, ps=ps, tmp=tmp, ts=ts)
 
-                            o3 = fin['o3'].values
-                            absorber_vmr['O3'] = o3
+                                    o3 = fin['o3'].values
+                                    absorber_vmr['O3'] = o3
 
-                            h2o_q = fin['q'].values
+                                    h2o_q = fin['q'].values
 
-                            rad = climlab.radiation.RRTMG(name='Radiation', state=state, specific_humidity=h2o_q,
-                                                          albedo=alb, coszen=cossza, absorber_vmr=absorber_vmr,
-                                                          emissivity=emis, S0=solar_constant, icld=0)
-                            rad.compute_diagnostics()
+                                    rad = climlab.radiation.RRTMG(name='Radiation', state=state, specific_humidity=h2o_q,
+                                                                  albedo=alb, coszen=cossza, absorber_vmr=absorber_vmr,
+                                                                  emissivity=emis, S0=solar_constant, icld=0)
+                                    rad.compute_diagnostics()
 
-                            dout = rad.to_xarray(diagnostics=True)
-                            sw_dn.append(dout['SW_flux_down_clr'].values[-1])
-                            # break
-                            # dout.to_netcdf(fo)
-                
-                count = 0
-                while count < 24:
-                    # sw_dn_final[count] = [(g+h)/2.0 for g,h in zip(sw_dn[count], sw_dn[count+24])]
-                    sw_dn_final[count] = (sw_dn[count]+sw_dn[count+24])/2.0
-                    count += 1
+                                    dout = rad.to_xarray(diagnostics=True)
+                                    sw_dn.append(dout['SW_flux_down_clr'].values[-1])
+                                    # break
+                                    # dout.to_netcdf(fo)
 
-                with open(fo, 'w') as outfile:
-                    wr = csv.writer(outfile)
-                    wr.writerow(sw_dn_final)
-                # print(fo)
-                # np.savetxt(fo, sw_dn_final, delimiter=",", fmt='%s')
+                        count = 0
+                        while count < 24:
+                            # sw_dn_final[count] = [(g+h)/2.0 for g,h in zip(sw_dn[count], sw_dn[count+24])]
+                            sw_dn_final[count] = (sw_dn[count]+sw_dn[count+24])/2.0
+                            count += 1
 
-                # outfile = open(fo, 'w')
-                # myString = ",".join(map(str,sw_dn_final))
-                # outfile.write("%s," % myString)
-                
-                # for item in sw_dn_final:
-                #    outfile.write("%s," % item)
+                        with open(fo, 'w') as outfile:
+                            wr = csv.writer(outfile)
+                            wr.writerow(sw_dn_final)
+                        # print(fo)
+                        # np.savetxt(fo, sw_dn_final, delimiter=",", fmt='%s')
 
-                # break
-            except:
-                pass
+                        # outfile = open(fo, 'w')
+                        # myString = ",".join(map(str,sw_dn_final))
+                        # outfile.write("%s," % myString)
+
+                        # for item in sw_dn_final:
+                        #    outfile.write("%s," % item)
+
+                        # break
+                    except:
+                        pass
 
 
 if __name__ == '__main__':
