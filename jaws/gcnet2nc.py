@@ -5,9 +5,9 @@ import pandas as pd
 import xarray as xr
 
 try:
-	from jaws import common, sunposition
+	from jaws import common, sunposition, tilt_angle
 except:
-	import common, sunposition
+	import common, sunposition, tilt_angle
 
 
 def init_dataframe(args, input_file):
@@ -169,6 +169,9 @@ def gcnet2nc(args, input_file, output_file, stations):
 	ds['latitude'] = tuple(), latitude
 	ds['longitude'] = tuple(), longitude
 	ds['surface_temp'] = 'time', surface_temp
+
+	if args.rigb:
+		ds = tilt_angle.main(ds, latitude, longitude)
 
 	comp_level = args.dfl_lvl
 	

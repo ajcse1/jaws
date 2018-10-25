@@ -6,9 +6,9 @@ import pandas as pd
 import xarray as xr
 
 try:
-	from jaws import common, sunposition
+	from jaws import common, sunposition, tilt_angle
 except:
-	import common, sunposition
+	import common, sunposition, tilt_angle
 
 
 def init_dataframe(args, input_file, sub_type):
@@ -130,6 +130,9 @@ def imau2nc(args, input_file, output_file, stations):
 	ds['station_name'] = tuple(), station_name
 	ds['latitude'] = tuple(), latitude
 	ds['longitude'] = tuple(), longitude
+
+	if args.rigb:
+		ds = tilt_angle.main(ds, latitude, longitude)
 
 	comp_level = args.dfl_lvl
 	
