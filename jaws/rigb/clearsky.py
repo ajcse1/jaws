@@ -30,7 +30,7 @@ def interpolate(x,y):
     return diff
 
 
-def clr_prd(dat_sza, tg_fsds, tg_sza, hours, out_file, year, day_of_year, count):
+def clr_prd(dat_sza, tg_fsds, tg_sza, out_file, date):
     scale = 1400
     offset = 0
     offset_range = 15
@@ -41,6 +41,7 @@ def clr_prd(dat_sza, tg_fsds, tg_sza, hours, out_file, year, day_of_year, count)
 
     clr_hrs = []
     daylight = []
+    hours = list(range(24))
     for hour in hours:
         if dat_sza[hour] > 0:
             daylight.append(hour)
@@ -57,12 +58,12 @@ def clr_prd(dat_sza, tg_fsds, tg_sza, hours, out_file, year, day_of_year, count)
     for k, g in groupby(enumerate(clr_hrs), lambda ix : ix[0] - ix[1]):
         cons_clr_hrs.append(list(map(itemgetter(1), g)))
     
-    final_hrs = write_to_file(cons_clr_hrs, daylight, out_file, year, day_of_year, count)
+    final_hrs = write_to_file(cons_clr_hrs, daylight, out_file, date)
     
     return final_hrs
 
 
-def clr_shift(final_hrs, dat_sza, dat_fill, hrs):
+def clr_shift(final_hrs, dat_sza, dat_fill, hrs, date):
     if not final_hrs:
         dat_sza_shift = list(range(len(dat_sza)))
 
@@ -79,94 +80,52 @@ def clr_shift(final_hrs, dat_sza, dat_fill, hrs):
 
             tg_sza_shift = interpolate(hrs,dat_sza_shift)
 
-            cons_clr_hrs = clr_prd(dat_sza, tg_fsds, tg_sza_shift, hours, out_file, year, day_of_year, count)
+            cons_clr_hrs = clr_prd(dat_sza, tg_fsds, tg_sza_shift, out_file, date)
 
             if cons_clr_hrs:
                 break
 
 
-def write_to_file(cons_clr_hrs, daylight, out_file, year, day_of_year, count):
+def write_to_file(cons_clr_hrs, daylight, out_file, date):
     final_hrs = []
     for group in cons_clr_hrs:
         if len(group) >= int(len(daylight)/2):
             final_hrs.append(group)
             
             with open(out_file, "a") as fl:
-                fl.write("{}, {}, {}\n".format(
-                    datetime.strptime("%s %s" % (year,int(day_of_year[count])), "%Y %j").date(), group[0], group[-1]))
+                fl.write("{}-{}-{},{},{}\n".format(date.year, date.month, date.day, group[0], group[-1]))
+
             return final_hrs
 
 
-#def main(args):
-def main():
-    global tg_fsds, dat_sza, dat_fill, hrs, hours, out_file, year, day_of_year, count
+def main(dataset):
+    global tg_fsds, dat_sza, dat_fill, hrs, out_file, year
 
-    #infile = args.input_file
-    infile = 'UPE-L.nc'
     out_file = "cleardays.txt"
 
     with open(out_file, "w") as fl:
         pass
 
-
-    ds = xr.open_dataset(infile)
-    ds = ds.drop('time_bounds')
+    ds = dataset.drop('time_bounds')
     df = ds.to_dataframe()
 
+    df.reset_index(level=['time'], inplace=True)
+    date_hour = df['time'].tolist()
+    dates = sorted(set(date_hour), key=date_hour.index)
 
-    year = 2010
-    df_sub = df[(df.year==year) & (df.month>4) & (df.month<9)]
-    #df_sub = df[(df.year==year) & (df.month==7)]
+    for date in dates:
+        df_temp = df[(df.month == date.month) & (df.day == date.day)]
 
+        dat = df_temp['shortwave_radiation_down'].tolist()
+        dat_rmvmsng = df_temp['shortwave_radiation_down'].dropna().tolist()
+        hrs = list(range(len(dat)))
+        hrs_rmvmsng = list(range(len(dat_rmvmsng)))
+        dat_fill = Ngl.ftcurv(hrs_rmvmsng, dat_rmvmsng, hrs)
+        dat_sza = [np.cos(np.radians(i)) for i in df_temp['sza'].tolist()]
 
-    day_of_year = df_sub['day_of_year'].tolist()
-    day_of_year = list(set(day_of_year))
+        tg_fsds = interpolate(hrs,dat_fill)
+        tg_sza = interpolate(hrs,dat_sza)
 
-    months = list(range(5,9))
-    days = list(range(1,32))
-    hours = list(range(24))
+        final_hrs = clr_prd(dat_sza, tg_fsds, tg_sza, out_file, date)
 
-    #plt.figure(figsize=(20,40))
-    #plot_number = 1
-    count = 0
-
-    for month in months:
-        for day in days:
-            try:
-                df_temp = df_sub[(df_sub.month==month) & (df_sub.day==day)]
-                
-                dat = df_temp['shortwave_radiation_down'].tolist()
-                dat_rmvmsng = df_temp['shortwave_radiation_down'].dropna().tolist()
-                hrs = list(range(len(dat)))
-                hrs_rmvmsng = list(range(len(dat_rmvmsng)))
-                dat_fill = Ngl.ftcurv(hrs_rmvmsng, dat_rmvmsng, hrs)
-                dat_sza = [np.cos(np.radians(i)) for i in df_temp['sza'].tolist()]
-
-                tg_fsds = interpolate(hrs,dat_fill)
-                tg_sza = interpolate(hrs,dat_sza)
-                
-                final_hrs = clr_prd(dat_sza, tg_fsds, tg_sza, hours, out_file, year, day_of_year, count)
-                
-                cons_clr_hrs = clr_shift(final_hrs, dat_sza, dat_fill, hrs)
-                
-                
-                count += 1
-
-                '''ax1 = plt.subplot(31, 4, plot_number)
-                ax1.plot(hours, dat_fill)
-
-                ax2 = ax1.twinx()
-                ax2.plot(hours, dat_sza, linestyle='--', color='hotpink')
-
-                if day in [4,8,12,16,20,24,28,31]:
-                    pass
-                else:
-                    ax2.set_yticks([])
-
-                plot_number += 1'''
-            except:
-                continue
-
-
-#if __name__ == '__main__':
-#    main()
+        clr_shift(final_hrs, dat_sza, dat_fill, hrs, date)

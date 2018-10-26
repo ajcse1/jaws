@@ -9,9 +9,9 @@ import pandas as pd
 import xarray as xr
 
 try:
-	from jaws import common, sunposition, tilt_angle
+	from jaws import common, sunposition, tilt_angle, clearsky
 except:
-	import common, sunposition, tilt_angle
+	import common, sunposition, tilt_angle, clearsky
 
 
 import warnings
@@ -167,6 +167,7 @@ def promice2nc(args, input_file, output_file, stations):
 	ds['longitude'] = tuple(), longitude
 
 	if args.rigb:
+		clearsky.main(ds)
 		ds = tilt_angle.main(ds, latitude, longitude)
 
 	comp_level = args.dfl_lvl
