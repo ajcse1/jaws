@@ -58,32 +58,33 @@ def clr_prd(dat_sza, tg_fsds, tg_sza, out_file, date):
     for k, g in groupby(enumerate(clr_hrs), lambda ix : ix[0] - ix[1]):
         cons_clr_hrs.append(list(map(itemgetter(1), g)))
     
-    final_hrs = write_to_file(cons_clr_hrs, daylight, out_file, date)
+    final_hrs, clr_lst = write_to_file(cons_clr_hrs, daylight, out_file, date)
     
-    return final_hrs
+    return final_hrs, clr_lst
 
 
-def clr_shift(final_hrs, dat_sza, dat_fill, hrs, date):
-    if not final_hrs:
-        dat_sza_shift = list(range(len(dat_sza)))
+def clr_shift(dat_sza, dat_fill, hrs, date):
+    dat_sza_shift = list(range(len(dat_sza)))
 
-        shift = [1,2,3]
+    shift = [1,2,3]
 
-        for i in shift:
-            if dat_sza.index(max(dat_sza)) < dat_fill.argmax:
-                dat_sza_shift[-i:] = [0] * (len(dat_sza_shift) - i)
-                dat_sza_shift[:-i] = dat_sza[i:]
+    for i in shift:
+        if dat_sza.index(max(dat_sza)) < dat_fill.argmax:
+            dat_sza_shift[-i:] = [0] * (len(dat_sza_shift) - i)
+            dat_sza_shift[:-i] = dat_sza[i:]
 
-            elif dat_sza.index(max(dat_sza)) > dat_fill.argmax:
-                dat_sza_shift[:i] = [0] * (len(dat_sza_shift) - i)
-                dat_sza_shift[i:] = dat_sza[:-i]
+        elif dat_sza.index(max(dat_sza)) > dat_fill.argmax:
+            dat_sza_shift[:i] = [0] * (len(dat_sza_shift) - i)
+            dat_sza_shift[i:] = dat_sza[:-i]
 
-            tg_sza_shift = interpolate(hrs,dat_sza_shift)
+        tg_sza_shift = interpolate(hrs,dat_sza_shift)
 
-            cons_clr_hrs = clr_prd(dat_sza, tg_fsds, tg_sza_shift, out_file, date)
+        cons_clr_hrs, clr_lst = clr_prd(dat_sza, tg_fsds, tg_sza_shift, out_file, date)
 
-            if cons_clr_hrs:
-                break
+        if cons_clr_hrs:
+            break
+
+    return clr_lst
 
 
 def write_to_file(cons_clr_hrs, daylight, out_file, date):
@@ -91,16 +92,20 @@ def write_to_file(cons_clr_hrs, daylight, out_file, date):
     for group in cons_clr_hrs:
         if len(group) >= int(len(daylight)/2):
             final_hrs.append(group)
-            
+
+            clr_lst.append(["{}-{}-{}".format(
+                date.year, '{:02d}'.format(date.month), '{:02d}'.format(date.day)), group[0], group[-1]])
+
             with open(out_file, "a") as fl:
                 fl.write("{}-{}-{},{},{}\n".format(date.year, date.month, date.day, group[0], group[-1]))
 
-            return final_hrs
+            return final_hrs, clr_lst
 
 
 def main(dataset):
-    global tg_fsds, dat_sza, dat_fill, hrs, out_file, year
+    global tg_fsds, dat_sza, dat_fill, hrs, out_file, year, clr_lst
 
+    clr_lst = []
     out_file = "cleardays.txt"
 
     with open(out_file, "w") as fl:
@@ -126,6 +131,11 @@ def main(dataset):
         tg_fsds = interpolate(hrs,dat_fill)
         tg_sza = interpolate(hrs,dat_sza)
 
-        final_hrs = clr_prd(dat_sza, tg_fsds, tg_sza, out_file, date)
+        final_hrs, clr_lst = clr_prd(dat_sza, tg_fsds, tg_sza, out_file, date)
 
-        clr_shift(final_hrs, dat_sza, dat_fill, hrs, date)
+        if not final_hrs:
+            clr_lst = clr_shift(dat_sza, dat_fill, hrs, date)
+
+    clr_df = pd.DataFrame(clr_lst)
+
+    return clr_df

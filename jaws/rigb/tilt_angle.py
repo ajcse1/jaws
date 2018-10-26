@@ -18,12 +18,13 @@ def deg_to_rad(list_deg):
     return list_rad
 
 
-def main(dataset, latitude, longitude):
+def main(dataset, latitude, longitude, clr_df):
     ddr = 0.25
     rho = 0.8
     smallest_double = 2.2250738585072014e-308
 
-    clrprd_file = pd.read_csv('cleardays.txt', header=None)
+    # clrprd_file = pd.read_csv('cleardays.txt', header=None)
+    clrprd_file = clr_df
     clrprd = [(str(x)+'_'+str(y)+'_'+str(z)) for x, y, z in
               zip(clrprd_file[0].tolist(), clrprd_file[1].tolist(), clrprd_file[2].tolist())]
 

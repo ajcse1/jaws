@@ -132,8 +132,8 @@ def imau2nc(args, input_file, output_file, stations):
 	ds['longitude'] = tuple(), longitude
 
 	if args.rigb:
-		clearsky.main(ds)
-		ds = tilt_angle.main(ds, latitude, longitude)
+		clr_df = clearsky.main(ds)
+		ds = tilt_angle.main(ds, latitude, longitude, clr_df)
 
 	comp_level = args.dfl_lvl
 	

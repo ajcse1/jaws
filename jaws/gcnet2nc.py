@@ -171,8 +171,8 @@ def gcnet2nc(args, input_file, output_file, stations):
 	ds['surface_temp'] = 'time', surface_temp
 
 	if args.rigb:
-		clearsky.main(ds)
-		ds = tilt_angle.main(ds, latitude, longitude)
+		clr_df = clearsky.main(ds)
+		ds = tilt_angle.main(ds, latitude, longitude, clr_df)
 
 	comp_level = args.dfl_lvl
 	
