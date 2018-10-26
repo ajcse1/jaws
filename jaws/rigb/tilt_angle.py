@@ -24,23 +24,29 @@ def main(dataset, latitude, longitude):
     smallest_double = 2.2250738585072014e-308
 
     clrprd_file = pd.read_csv('cleardays.txt', header=None)
-    clrprd = [(str(x)+'_'+str(y)+'_'+str(z)) for x,y,z in 
-    zip(clrprd_file[0].tolist(), clrprd_file[1].tolist(), clrprd_file[2].tolist())]
+    clrprd = [(str(x)+'_'+str(y)+'_'+str(z)) for x, y, z in
+              zip(clrprd_file[0].tolist(), clrprd_file[1].tolist(), clrprd_file[2].tolist())]
 
     hours = list(range(24))
-    half_hours = list(np.arange(0,24,0.5))
+    half_hours = list(np.arange(0, 24, 0.5))
 
     dir_rrtm = 'rrtm-airx3std/'
     stn = 'UPE-L'
 
-    #ds = xr.open_dataset('promice_Upernavik-L_20090817_20170916.nc')
+    # ds = xr.open_dataset('promice_Upernavik-L_20090817_20170916.nc')
     ds = dataset
     df = ds.to_dataframe()
 
-    #latitude = df['latitude'][0][0]
-    #longitude = df['longitude'][0][0]
+    # latitude = df['latitude'][0][0]
+    # longitude = df['longitude'][0][0]
     lat = latitude
     lon = longitude
+
+    df.reset_index(level=['time'], inplace=True)
+    dates = df['time'].tolist()
+    time = sorted(set(dates), key=dates.index)
+
+    tilt_df = pd.DataFrame(index=time, columns=['fsds_adjusted', 'fsds_diff'])
 
     fsds_adjusted = []
     fsds_diff = []
@@ -52,18 +58,23 @@ def main(dataset, latitude, longitude):
         year = int(clrdate[:4])
         month = int(clrdate[5:7])
         day = int(clrdate[8:10])
+        current_date_hour = []
+        for hour in hours:
+            current_date_hour.append(datetime(year, month, day, hour))
+
+        calculated_df = pd.DataFrame(index=current_date_hour, columns=['fsds_adjusted', 'fsds_diff'])
 
         fsds_rrtm = open(dir_rrtm+stn+'_'+clrdate.replace('-', '')+'.txt').read().split(',')
         fsds_rrtm = [float(i) for i in fsds_rrtm]
 
-        #Subset dataframe
+        # Subset dataframe
         df_sub = df[(df.year == year) & (df.month == month) & (df.day == day)]
 
         sza = df_sub['sza'][0].tolist()
         fsds_jaws = df_sub['shortwave_radiation_down'][0].tolist()
         fsds_jaws_nonmsng = df_sub['shortwave_radiation_down'][0].dropna().tolist()
         indexMissingJAWS = np.where(df_sub['shortwave_radiation_down'][0].isna())
-        indexMissingJAWS = [a for b in indexMissingJAWS for a in b]  #Convert to list
+        indexMissingJAWS = [a for b in indexMissingJAWS for a in b]  # Convert to list
 
         hours_nonmsng = list(range(len(fsds_jaws_nonmsng)))
 
@@ -175,13 +186,28 @@ def main(dataset, latitude, longitude):
             num_spikes.append(spike_hrs)
 
         top_pair = best_pairs[num_spikes.index(min(num_spikes))]
-        print(top_pair)
-        #print('***********')
+        # print(top_pair)
+        # print('***********')
         fsds_adjusted.append(fsds_toppair_dict[top_pair])
         fsds_diff.append([x-y for x,y in zip(fsds_adjusted, fsds_jaws)])
-        
-    ds['fsds_adjusted'] = 'time', fsds_adjusted
-    ds['fsds_diff'] = 'time', fsds_diff
+
+        calculated_df['fsds_adjusted'] = fsds_adjusted
+        calculated_df['fsds_diff'] = fsds_diff
+
+        for val in calculated_df.index:
+            tilt_df.at[val, 'fsds_adjusted'] = calculated_df.loc[val]['fsds_adjusted']
+            tilt_df.at[val, 'fsds_diff'] = calculated_df.loc[val]['fsds_diff']
+
+    for col in tilt_df:
+        tilt_df['fsds_adjusted'] = pd.to_numeric(tilt_df['fsds_adjusted'], errors='coerce')
+        tilt_df['fsds_diff'] = pd.to_numeric(tilt_df['fsds_diff'], errors='coerce')
+
+    tilt_df = tilt_df.interpolate()
+    fsds_adjusted_values = tilt_df['fsds_adjusted'].tolist()
+    fsds_diff_values = tilt_df['fsds_diff'].tolist()
+
+    ds['fsds_adjusted'] = 'time', fsds_adjusted_values
+    ds['fsds_diff'] = 'time', fsds_diff_values
 
     return ds
 
