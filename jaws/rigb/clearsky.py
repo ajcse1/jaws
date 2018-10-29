@@ -1,3 +1,4 @@
+from datetime import datetime
 from itertools import groupby
 from operator import itemgetter
 
@@ -102,12 +103,13 @@ def main(dataset):
     df.reset_index(level=['time'], inplace=True)
     date_hour = df['time'].tolist()
     dates = sorted(set(date_hour), key=date_hour.index)
+    dates = [datetime.fromtimestamp(i) for i in dates]
 
     for date in dates:
         df_temp = df[(df.month == date.month) & (df.day == date.day)]
 
-        dat = df_temp['shortwave_radiation_down'].tolist()
-        dat_rmvmsng = df_temp['shortwave_radiation_down'].dropna().tolist()
+        dat = df_temp['sw_down'].tolist()
+        dat_rmvmsng = df_temp['sw_down'].dropna().tolist()
         hrs = list(range(len(dat)))
         hrs_rmvmsng = list(range(len(dat_rmvmsng)))
         dat_fill = Ngl.ftcurv(hrs_rmvmsng, dat_rmvmsng, hrs)
