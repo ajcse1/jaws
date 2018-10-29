@@ -89,7 +89,7 @@ def write_to_file(cons_clr_hrs, daylight, date):
             clr_lst.append(["{}-{}-{}".format(
                 date.year, '{:02d}'.format(date.month), '{:02d}'.format(date.day)), group[0], group[-1]])
 
-            return final_hrs, clr_lst
+    return final_hrs, clr_lst
 
 
 def main(dataset):
@@ -103,7 +103,7 @@ def main(dataset):
     df.reset_index(level=['time'], inplace=True)
     date_hour = df['time'].tolist()
     dates = sorted(set(date_hour), key=date_hour.index)
-    dates = [datetime.fromtimestamp(i) for i in dates]
+    dates = [datetime.utcfromtimestamp(i) for i in dates]
 
     for date in dates:
         df_temp = df[(df.month == date.month) & (df.day == date.day)]
