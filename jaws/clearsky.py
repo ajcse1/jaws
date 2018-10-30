@@ -62,11 +62,11 @@ def clr_shift(dat_sza, dat_fill, hrs, date):
     shift = [1, 2, 3]
 
     for i in shift:
-        if dat_sza.index(max(dat_sza)) < dat_fill.argmax:
+        if dat_sza.index(max(dat_sza)) < dat_fill.argmax():
             dat_sza_shift[-i:] = [0] * (len(dat_sza_shift) - i)
             dat_sza_shift[:-i] = dat_sza[i:]
 
-        elif dat_sza.index(max(dat_sza)) > dat_fill.argmax:
+        elif dat_sza.index(max(dat_sza)) > dat_fill.argmax():
             dat_sza_shift[:i] = [0] * (len(dat_sza_shift) - i)
             dat_sza_shift[i:] = dat_sza[:-i]
 
