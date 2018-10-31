@@ -23,7 +23,6 @@ def main(dataset, latitude, longitude, clr_df):
     rho = 0.8
     smallest_double = 2.2250738585072014e-308
 
-    # clrprd_file = pd.read_csv('cleardays.txt', header=None)
     clrprd_file = clr_df
     clrprd = [(str(x)+'_'+str(y)+'_'+str(z)) for x, y, z in
               zip(clrprd_file[0].tolist(), clrprd_file[1].tolist(), clrprd_file[2].tolist())]
@@ -31,17 +30,8 @@ def main(dataset, latitude, longitude, clr_df):
     hours = list(range(24))
     half_hours = list(np.arange(0, 24, 0.5))
 
-    dir_rrtm = 'rrtm-airx3std/'
-    stn = 'UPE-L'
-
-    # ds = xr.open_dataset('promice_Upernavik-L_20090817_20170916.nc')
     ds = dataset
     df = ds.to_dataframe()
-
-    # latitude = df['latitude'][0][0]
-    # longitude = df['longitude'][0][0]
-    lat = latitude
-    lon = longitude
 
     df.reset_index(level=['time'], inplace=True)
     dates = df['time'].tolist()
@@ -51,6 +41,13 @@ def main(dataset, latitude, longitude, clr_df):
 
     fsds_adjusted = []
     fsds_diff = []
+
+    lat = latitude
+    lon = longitude
+    stn = df['station_name'][0]
+
+    grele_path = 'http://grele.ess.uci.edu/jaws/rigb_data/'
+    dir_rrtm = 'rrtm-airx3std/'
 
     for line in clrprd:
         clrdate = line.split('_')[0]
@@ -65,7 +62,7 @@ def main(dataset, latitude, longitude, clr_df):
 
         calculated_df = pd.DataFrame(index=current_date_hour, columns=['fsds_adjusted', 'fsds_diff'])
 
-        fsds_rrtm = open(dir_rrtm+stn+'_'+clrdate.replace('-', '')+'.txt').read().split(',')
+        fsds_rrtm = open(grele_path+dir_rrtm+stn+'_'+clrdate.replace('-', '')+'.txt').read().split(',')
         fsds_rrtm = [float(i) for i in fsds_rrtm]
 
         # Subset dataframe
@@ -154,8 +151,6 @@ def main(dataset, latitude, longitude, clr_df):
                                                 fsds_rrtm[clrhr_start:clrhr_end])]
                 daily_avg_diff.append(np.nanmean(diff))
 
-        # print(day)
-        # print(len(possible_pairs))
 
         #########PART-2#############
 
@@ -166,7 +161,6 @@ def main(dataset, latitude, longitude, clr_df):
                 if val <= min(dailyavg_possiblepair_dict.keys())+5:
                     best_pairs.append(dailyavg_possiblepair_dict.get(val))
 
-        # print(len(best_pairs))
 
         #########PART-3#############
  
@@ -187,8 +181,7 @@ def main(dataset, latitude, longitude, clr_df):
             num_spikes.append(spike_hrs)
 
         top_pair = best_pairs[num_spikes.index(min(num_spikes))]
-        # print(top_pair)
-        # print('***********')
+
         fsds_adjusted.append(fsds_toppair_dict[top_pair])
         fsds_diff.append([x-y for x,y in zip(fsds_adjusted, fsds_jaws)])
 
@@ -211,8 +204,3 @@ def main(dataset, latitude, longitude, clr_df):
     ds['fsds_diff'] = 'time', fsds_diff_values
 
     return ds
-
-
-
-#if __name__ == '__main__':
-#    main()
