@@ -143,6 +143,8 @@ def main():
                 ps_airs = ds_sub_temp[v_ps_airs].values.tolist()
                 if ps_airs:
                     pin[-1] = ps_airs
+                else:
+                    continue
 
                 # Temperature
                 v_t_airs = 'Temperature_TqJ_'+sfx
