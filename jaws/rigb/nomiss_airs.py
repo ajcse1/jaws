@@ -151,7 +151,9 @@ def main():
                 tin[:nplev] = ds_sub_temp[v_t_airs].values.tolist()[::-1]
                 v_ta_airs = 'SurfAirTemp_TqJ_'+sfx
                 ta_airs = ds_sub_temp[v_ta_airs].values.tolist()
-                if ta_airs:
+                if np.isnan(ta_airs):
+                    continue
+                else:
                     tin[-1] = ta_airs
 
                 v_ts_airs = 'SurfSkinTemp_TqJ_'+sfx
