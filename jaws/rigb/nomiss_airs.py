@@ -141,10 +141,10 @@ def main():
                 pin[:nplev] = plev[:]
                 v_ps_airs = 'SurfPres_Forecast_TqJ_'+sfx
                 ps_airs = ds_sub_temp[v_ps_airs].values.tolist()
-                if ps_airs:
-                    pin[-1] = ps_airs
-                else:
+                if np.isnan(ps_airs):
                     continue
+                else:
+                    pin[-1] = ps_airs
 
                 # Temperature
                 v_t_airs = 'Temperature_TqJ_'+sfx
@@ -156,6 +156,8 @@ def main():
 
                 v_ts_airs = 'SurfSkinTemp_TqJ_'+sfx
                 ts_airs = ds_sub_temp[v_ts_airs].values.tolist()
+                if np.isnan(ts_airs):
+                    continue
 
                 # Water vapor mixing ratio
                 v_q_airs = 'H2O_MMR_TqJ_'+sfx
