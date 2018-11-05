@@ -62,11 +62,6 @@ def main():
     absorber_vmr['CFC22'] = 0.
     absorber_vmr['CCL4'] = 0.
 
-    # knob
-    aod = np.zeros((6, 1, 18))
-    aod[1, 0, -3:] = 0.12/3
-    aod[5, 0, :7] = 0.0077/7
-
     # stn names and lat/lon
     lst_stn = pd.read_csv('stations_radiation.txt')
     stn_names = lst_stn['stn_name'].tolist()
@@ -131,9 +126,16 @@ def main():
 
                                     h2o_q = fin['q'].values
 
+                                    aod_count = fin['aod_count'].values
+
+                                    # knob
+                                    aod = np.zeros((6, 1, 18))
+                                    aod[1, 0, -aod_count:] = 0.12 / aod_count
+                                    aod[5, 0, :7] = 0.0077 / 7
+
                                     rad = climlab.radiation.RRTMG(name='Radiation', state=state, specific_humidity=h2o_q,
                                                                   albedo=alb, coszen=cossza, absorber_vmr=absorber_vmr,
-                                                                  emissivity=emis, S0=solar_constant, icld=0)
+                                                                  emissivity=emis, S0=solar_constant, icld=0, aod=aod)
                                     rad.compute_diagnostics()
 
                                     dout = rad.to_xarray(diagnostics=True)

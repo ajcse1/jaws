@@ -195,6 +195,11 @@ def main():
                 pin = pin.interpolate(limit_direction='both').values.tolist()
                 pout = pin[:-1]
 
+                aod_count = 0
+                for press in pout:
+                    if (pin[-1]-100) < press < pin[-1]:
+                        aod_count += 1
+
                 # If all values are missing for any variable, skip that day
                 if not any(tin) or not any(qin) or not any(o3_airs):
                     continue
@@ -206,7 +211,8 @@ def main():
 
                 # Write variables to xarray-dataset
                 ds = xr.Dataset({'plev': ('PLEV', pout), 't': ('PLEV', tout), 'q': ('PLEV', qout_q),
-                                 'o3': ('PLEV', o3_out), 'ts': ts_airs, 'ta': tin[-1], 'ps': ps_airs})
+                                 'o3': ('PLEV', o3_out), 'ts': ts_airs, 'ta': tin[-1], 'ps': ps_airs,
+                                 'aod_count': aod_count})
 
                 # Write to netCDF file
                 if not os.path.exists(outdir):
