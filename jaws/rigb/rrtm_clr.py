@@ -134,7 +134,8 @@ def main():
 
                                 rad = climlab.radiation.RRTMG(name='Radiation', state=state, specific_humidity=h2o_q,
                                                               albedo=alb, coszen=cossza, absorber_vmr=absorber_vmr,
-                                                              emissivity=emis, S0=solar_constant, icld=0, aod=aod)
+                                                              emissivity=emis, S0=solar_constant, icld=0, iaer=6,
+                                                              ecaer_sw=aod)
                                 rad.compute_diagnostics()
 
                                 dout = rad.to_xarray(diagnostics=True)
