@@ -61,7 +61,7 @@ def haversine_np(latlon1, latlon2):
 
 def get_stn_latlonname(station_file):
     lst_stn = pd.read_csv(station_file)
-    stn_names = lst_stn['stn_name'].tolist()
+    stn_names = lst_stn['network_name'].tolist()
 
     latstn = lst_stn['lat'].tolist()
     lonstn = lst_stn['lon'].tolist()

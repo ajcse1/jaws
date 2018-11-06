@@ -64,7 +64,7 @@ def main():
 
     # stn names and lat/lon
     lst_stn = pd.read_csv('stations_radiation.txt')
-    stn_names = lst_stn['stn_name'].tolist()
+    stn_names = lst_stn['network_name'].tolist()
     latstn = lst_stn['lat'].tolist()
     lonstn = lst_stn['lon'].tolist()
 
