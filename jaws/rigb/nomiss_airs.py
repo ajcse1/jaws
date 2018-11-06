@@ -102,7 +102,7 @@ def log_interpolation(var_name, **kwargs):
 
 def main():
     #indir = './'
-    indir = '../../../../data/wenshanw/airs/hdf_airx3std/'
+    indir = '/data/wenshanw/airs/hdf_airx3std/'
     outdir = 'nomiss-airx3std'
 
     nplev = 24
