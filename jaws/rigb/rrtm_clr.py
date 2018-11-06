@@ -103,6 +103,27 @@ def main():
 
                                 fin = xr.open_dataset(fn)
 
+                                tmp = fin['t'].values
+                                # ts = fin['sfc_tmp'].values
+                                ts = fin['ts'].values
+                                plev = fin['plev'].values
+                                # ps = fin['sfc_prs'].values
+                                ps = fin['ps'].values
+
+                                state = make_column(lev=plev, ps=ps, tmp=tmp, ts=ts)
+
+                                o3 = fin['o3'].values
+                                absorber_vmr['O3'] = o3
+
+                                h2o_q = fin['q'].values
+
+                                aod_count = fin['aod_count'].values
+
+                                # knob
+                                aod = np.zeros((6, 1, 24))
+                                aod[1, 0, -aod_count:] = 0.12 / aod_count
+                                aod[5, 0, :15] = 0.0077 / 15
+
                                 for hr in range(24):
                                     dtime = datetime.strptime(fn.split('_')[1], "%Y%m%d") + timedelta(hours=hr)
 
@@ -111,27 +132,6 @@ def main():
 
                                     sza = sunposition.sunpos(dtime, lat_deg, lon_deg, 0)[1]
                                     cossza = np.cos(np.radians(sza))
-
-                                    tmp = fin['t'].values
-                                    # ts = fin['sfc_tmp'].values
-                                    ts = fin['ts'].values
-                                    plev = fin['plev'].values
-                                    # ps = fin['sfc_prs'].values
-                                    ps = fin['ps'].values
-
-                                    state = make_column(lev=plev, ps=ps, tmp=tmp, ts=ts)
-
-                                    o3 = fin['o3'].values
-                                    absorber_vmr['O3'] = o3
-
-                                    h2o_q = fin['q'].values
-
-                                    aod_count = fin['aod_count'].values
-
-                                    # knob
-                                    aod = np.zeros((6, 1, 24))
-                                    aod[1, 0, -aod_count:] = 0.12 / aod_count
-                                    aod[5, 0, :15] = 0.0077 / 15
 
                                     rad = climlab.radiation.RRTMG(name='Radiation', state=state, specific_humidity=h2o_q,
                                                                   albedo=alb, coszen=cossza, absorber_vmr=absorber_vmr,
