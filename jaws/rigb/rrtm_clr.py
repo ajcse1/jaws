@@ -124,7 +124,7 @@ def main():
                             aod[5, 0, :15] = 0.0077 / 15
 
                             for hr in range(24):
-                                dtime = datetime.strptime(fn.split('.')[1], "%Y%m%d") + timedelta(hours=hr)
+                                dtime = datetime.strptime(fn.split('.')[1], "%Y%m%d") + timedelta(hours=hr, minutes=30)
 
                                 # fo = outdir+stn+'_'+dtime.strftime('%Y%m%d:%H')+fn[-5:]
                                 fo = outdir+stn+'_'+dtime.strftime('%Y%m%d')+'.txt'
