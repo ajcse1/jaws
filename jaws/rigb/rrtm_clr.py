@@ -98,50 +98,49 @@ def main():
                         sw_dn = []
                         sw_dn_final = [None]*24
                         for sfx in ['A', 'D']:
-                            for fn in glob.iglob(indir+stn+'_'+year+month+day+'_'+sfx+'.nc'):
-                                print(fn)
+                            fn = indir + stn + '_' + str(year) + str(month) + str(day) + '_' + sfx + '.nc'
 
-                                fin = xr.open_dataset(fn)
+                            fin = xr.open_dataset(fn)
 
-                                tmp = fin['t'].values
-                                # ts = fin['sfc_tmp'].values
-                                ts = fin['ts'].values
-                                plev = fin['plev'].values
-                                # ps = fin['sfc_prs'].values
-                                ps = fin['ps'].values
+                            tmp = fin['t'].values
+                            # ts = fin['sfc_tmp'].values
+                            ts = fin['ts'].values
+                            plev = fin['plev'].values
+                            # ps = fin['sfc_prs'].values
+                            ps = fin['ps'].values
 
-                                state = make_column(lev=plev, ps=ps, tmp=tmp, ts=ts)
+                            state = make_column(lev=plev, ps=ps, tmp=tmp, ts=ts)
 
-                                o3 = fin['o3'].values
-                                absorber_vmr['O3'] = o3
+                            o3 = fin['o3'].values
+                            absorber_vmr['O3'] = o3
 
-                                h2o_q = fin['q'].values
+                            h2o_q = fin['q'].values
 
-                                aod_count = fin['aod_count'].values
+                            aod_count = fin['aod_count'].values
 
-                                # knob
-                                aod = np.zeros((6, 1, 24))
-                                aod[1, 0, -aod_count:] = 0.12 / aod_count
-                                aod[5, 0, :15] = 0.0077 / 15
+                            # knob
+                            aod = np.zeros((6, 1, 24))
+                            aod[1, 0, -aod_count:] = 0.12 / aod_count
+                            aod[5, 0, :15] = 0.0077 / 15
 
-                                for hr in range(24):
-                                    dtime = datetime.strptime(fn.split('_')[1], "%Y%m%d") + timedelta(hours=hr)
+                            for hr in range(24):
+                                dtime = datetime.strptime(fn.split('_')[1], "%Y%m%d") + timedelta(hours=hr)
 
-                                    # fo = outdir+stn+'_'+dtime.strftime('%Y%m%d:%H')+fn[-5:]
-                                    fo = outdir+stn+'_'+dtime.strftime('%Y%m%d')+'.txt'
+                                # fo = outdir+stn+'_'+dtime.strftime('%Y%m%d:%H')+fn[-5:]
+                                fo = outdir+stn+'_'+dtime.strftime('%Y%m%d')+'.txt'
 
-                                    sza = sunposition.sunpos(dtime, lat_deg, lon_deg, 0)[1]
-                                    cossza = np.cos(np.radians(sza))
+                                sza = sunposition.sunpos(dtime, lat_deg, lon_deg, 0)[1]
+                                cossza = np.cos(np.radians(sza))
 
-                                    rad = climlab.radiation.RRTMG(name='Radiation', state=state, specific_humidity=h2o_q,
-                                                                  albedo=alb, coszen=cossza, absorber_vmr=absorber_vmr,
-                                                                  emissivity=emis, S0=solar_constant, icld=0, aod=aod)
-                                    rad.compute_diagnostics()
+                                rad = climlab.radiation.RRTMG(name='Radiation', state=state, specific_humidity=h2o_q,
+                                                              albedo=alb, coszen=cossza, absorber_vmr=absorber_vmr,
+                                                              emissivity=emis, S0=solar_constant, icld=0, aod=aod)
+                                rad.compute_diagnostics()
 
-                                    dout = rad.to_xarray(diagnostics=True)
-                                    sw_dn.append(dout['SW_flux_down_clr'].values[-1])
-                                    # break
-                                    # dout.to_netcdf(fo)
+                                dout = rad.to_xarray(diagnostics=True)
+                                sw_dn.append(dout['SW_flux_down_clr'].values[-1])
+                                # break
+                                # dout.to_netcdf(fo)
 
                         count = 0
                         while count < 24:
