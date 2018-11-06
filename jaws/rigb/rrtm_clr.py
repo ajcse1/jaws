@@ -98,7 +98,7 @@ def main():
                         sw_dn = []
                         sw_dn_final = [None]*24
                         for sfx in ['A', 'D']:
-                            fn = indir + stn + '_' + str(year) + str(month) + str(day) + '_' + sfx + '.nc'
+                            fn = indir + stn + '.' + str(year) + str(month) + str(day) + '.' + sfx + '.nc'
 
                             fin = xr.open_dataset(fn)
 
@@ -124,7 +124,7 @@ def main():
                             aod[5, 0, :15] = 0.0077 / 15
 
                             for hr in range(24):
-                                dtime = datetime.strptime(fn.split('_')[1], "%Y%m%d") + timedelta(hours=hr)
+                                dtime = datetime.strptime(fn.split('.')[1], "%Y%m%d") + timedelta(hours=hr)
 
                                 # fo = outdir+stn+'_'+dtime.strftime('%Y%m%d:%H')+fn[-5:]
                                 fo = outdir+stn+'_'+dtime.strftime('%Y%m%d')+'.txt'
