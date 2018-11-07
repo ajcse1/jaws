@@ -100,7 +100,7 @@ def main():
                             fn = indir + stn + '.' + str(year) + str(month) + str(day) + '.' + sfx + '.nc'
 
                             fin = xr.open_dataset(fn)
-                            fout = outdir + stn + '_' + fn.split('.')[1] + '.txt'
+                            fout = outdir + stn + '.' + fn.split('.')[1] + '.txt'
 
                             tmp = fin['t'].values
                             # ts = fin['sfc_tmp'].values

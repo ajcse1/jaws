@@ -62,7 +62,7 @@ def main(dataset, latitude, longitude, clr_df):
 
         calculated_df = pd.DataFrame(index=current_date_hour, columns=['fsds_adjusted', 'fsds_diff'])
 
-        fsds_rrtm = open(grele_path+dir_rrtm+stn+'_'+clrdate.replace('-', '')+'.txt').read().split(',')
+        fsds_rrtm = open(grele_path+dir_rrtm+stn+'.'+clrdate.replace('-', '')+'.txt').read().split(',')
         fsds_rrtm = [float(i) for i in fsds_rrtm]
 
         # Subset dataframe
