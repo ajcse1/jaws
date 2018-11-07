@@ -99,6 +99,9 @@ def main():
                         for sfx in ['A', 'D']:
                             flname = indir + stn + '.' + str(year) + str(month) + str(day) + '.' + sfx + '.nc'
 
+                            if not os.path.isfile(flname):
+                                continue
+
                             fin = xr.open_dataset(flname)
                             fout = outdir + stn + '.' + flname.split('.')[1] + '.txt'
 
