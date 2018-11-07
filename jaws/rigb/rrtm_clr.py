@@ -97,10 +97,10 @@ def main():
                         sw_dn = []
                         sw_dn_final = [None]*24
                         for sfx in ['A', 'D']:
-                            fn = indir + stn + '.' + str(year) + str(month) + str(day) + '.' + sfx + '.nc'
+                            flname = indir + stn + '.' + str(year) + str(month) + str(day) + '.' + sfx + '.nc'
 
-                            fin = xr.open_dataset(fn)
-                            fout = outdir + stn + '.' + fn.split('.')[1] + '.txt'
+                            fin = xr.open_dataset(flname)
+                            fout = outdir + stn + '.' + flname.split('.')[1] + '.txt'
 
                             tmp = fin['t'].values
                             # ts = fin['sfc_tmp'].values
@@ -124,7 +124,7 @@ def main():
                             aod[5, 0, :15] = 0.0077 / 15
 
                             for hr in range(24):
-                                dtime = datetime.strptime(fn.split('.')[1], "%Y%m%d") + timedelta(hours=hr, minutes=30)
+                                dtime = datetime.strptime(flname.split('.')[1], "%Y%m%d") + timedelta(hours=hr, minutes=30)
 
                                 sza = sunposition.sunpos(dtime, lat_deg, lon_deg, 0)[1]
                                 cossza = np.cos(np.radians(sza))
