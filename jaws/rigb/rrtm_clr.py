@@ -1,6 +1,5 @@
 import csv
 from datetime import datetime, timedelta
-import glob
 import os
 
 import climlab
@@ -101,6 +100,7 @@ def main():
                             fn = indir + stn + '.' + str(year) + str(month) + str(day) + '.' + sfx + '.nc'
 
                             fin = xr.open_dataset(fn)
+                            fout = outdir + stn + '_' + fn.split('.')[1] + '.txt'
 
                             tmp = fin['t'].values
                             # ts = fin['sfc_tmp'].values
@@ -126,9 +126,6 @@ def main():
                             for hr in range(24):
                                 dtime = datetime.strptime(fn.split('.')[1], "%Y%m%d") + timedelta(hours=hr, minutes=30)
 
-                                # fo = outdir+stn+'_'+dtime.strftime('%Y%m%d:%H')+fn[-5:]
-                                fo = outdir+stn+'_'+dtime.strftime('%Y%m%d')+'.txt'
-
                                 sza = sunposition.sunpos(dtime, lat_deg, lon_deg, 0)[1]
                                 cossza = np.cos(np.radians(sza))
 
@@ -140,30 +137,19 @@ def main():
 
                                 dout = rad.to_xarray(diagnostics=True)
                                 sw_dn.append(dout['SW_flux_down_clr'].values[-1])
-                                # dout.to_netcdf(fo)
 
                         if len(sw_dn) == 24:
-                            sw_dn_final = sw_dn
+                            sw_dn_final = sw_dn  # If only either 'A' or 'D' file present
                         else:
                             count = 0
                             while count < 24:
                                 sw_dn_final[count] = (sw_dn[count]+sw_dn[count+24])/2.0
                                 count += 1
 
-                        with open(fo, 'w') as outfile:
+                        with open(fout, 'w') as outfile:
                             wr = csv.writer(outfile)
                             wr.writerow(sw_dn_final)
-                        # print(fo)
-                        # np.savetxt(fo, sw_dn_final, delimiter=",", fmt='%s')
 
-                        # outfile = open(fo, 'w')
-                        # myString = ",".join(map(str,sw_dn_final))
-                        # outfile.write("%s," % myString)
-
-                        # for item in sw_dn_final:
-                        #    outfile.write("%s," % item)
-
-                        # break
                     except:
                         pass
 
