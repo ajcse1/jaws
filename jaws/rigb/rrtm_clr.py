@@ -140,14 +140,15 @@ def main():
 
                                 dout = rad.to_xarray(diagnostics=True)
                                 sw_dn.append(dout['SW_flux_down_clr'].values[-1])
-                                # break
                                 # dout.to_netcdf(fo)
 
-                        count = 0
-                        while count < 24:
-                            # sw_dn_final[count] = [(g+h)/2.0 for g,h in zip(sw_dn[count], sw_dn[count+24])]
-                            sw_dn_final[count] = (sw_dn[count]+sw_dn[count+24])/2.0
-                            count += 1
+                        if len(sw_dn) == 24:
+                            sw_dn_final = sw_dn
+                        else:
+                            count = 0
+                            while count < 24:
+                                sw_dn_final[count] = (sw_dn[count]+sw_dn[count+24])/2.0
+                                count += 1
 
                         with open(fo, 'w') as outfile:
                             wr = csv.writer(outfile)
