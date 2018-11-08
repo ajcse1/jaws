@@ -100,6 +100,13 @@ def log_interpolation(var_name, **kwargs):
     return var_out
 
 
+def checkna(variable):
+    if np.count_nonzero(~np.isnan(variable)) >= len(variable)/3:
+        return True
+    else:
+        return False
+
+
 def main():
     #indir = './'
     indir = '/data/wenshanw/airs/hdf_airx3std/'
@@ -200,14 +207,14 @@ def main():
                     if (pin[-1]-100) < press < pin[-1]:
                         aod_count += 1
 
-                # If all values are missing for any variable, skip that day
-                if not any(tin) or not any(qin) or not any(o3_airs):
-                    continue
-                else:
+                # If more than (2/3)rd values are missing for any variable, skip that day
+                if checkna(tin) and checkna(qin) and checkna(o3_airs):
                     tout = log_interpolation(tin)
                     qout = log_interpolation(qin)
                     qout_q = [beta/(beta+1) for beta in qout] # Convert q_mmr to q_specific-humidity
                     o3_out = log_interpolation(o3_airs, plev = plev, pout = pout)
+                else:
+                    continue
 
                 # Write variables to xarray-dataset
                 ds = xr.Dataset({'plev': ('PLEV', pout), 't': ('PLEV', tout), 'q': ('PLEV', qout_q),
