@@ -101,6 +101,7 @@ def log_interpolation(var_name, **kwargs):
 
 
 def checkna(variable):
+    variable = pd.to_numeric(variable, errors='coerce')
     if np.count_nonzero(~np.isnan(variable)) >= len(variable)/3:
         return True
     else:
