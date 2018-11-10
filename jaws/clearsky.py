@@ -124,6 +124,10 @@ def main(dataset):
         dat_rmvmsng = df_temp['sw_down'].dropna().tolist()
         hrs = list(range(len(dat)))
         hrs_rmvmsng = list(range(len(dat_rmvmsng)))
+
+        if len(hrs_rmvmsng) == 0:
+            continue
+
         dat_fill = Ngl.ftcurv(hrs_rmvmsng, dat_rmvmsng, hrs)
         dat_sza = [np.cos(np.radians(i)) for i in df_temp['sza'].tolist()]
 
