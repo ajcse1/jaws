@@ -1,3 +1,4 @@
+import os
 import requests
 
 import numpy as np
@@ -84,3 +85,5 @@ def main(dataset):
 
             count += 1
             idx_count += 1
+
+    os.remove(stn + '.ceres.nc')
