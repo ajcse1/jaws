@@ -33,7 +33,7 @@ def main(dataset):
 
     grele_path = 'http://grele.ess.uci.edu/jaws/rigb_data/'
     dir_ceres = 'ceres/'
-    url = grele_path + dir_ceres + '.ceres.nc'
+    url = grele_path + dir_ceres + stn + '.ceres.nc'
     r = requests.get(url, allow_redirects=True)
     open(stn + '.ceres.nc', 'wb').write(r.content)
 
