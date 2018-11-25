@@ -87,3 +87,5 @@ def main(dataset):
             idx_count += 1
 
     os.remove(stn + '.ceres.nc')
+
+    return ds

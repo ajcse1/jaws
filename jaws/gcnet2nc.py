@@ -5,9 +5,9 @@ import pandas as pd
 import xarray as xr
 
 try:
-	from jaws import common, sunposition, tilt_angle, clearsky
+	from jaws import common, sunposition, tilt_angle, clearsky, fsds_all
 except:
-	import common, sunposition, tilt_angle, clearsky
+	import common, sunposition, tilt_angle, clearsky, fsds_all
 
 
 def init_dataframe(args, input_file):
@@ -175,8 +175,11 @@ def gcnet2nc(args, input_file, output_file, stations):
 
 	if args.rigb:
 		clr_df = clearsky.main(ds)
+
 		if not clr_df.empty:
 			ds = tilt_angle.main(ds, latitude, longitude, clr_df)
+
+		ds = fsds_all.main(ds)
 
 	comp_level = args.dfl_lvl
 	
