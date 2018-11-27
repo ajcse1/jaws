@@ -50,7 +50,7 @@ def main(dataset):
 
         df_sub = df[(df.year == year) & (df.month == month) & (df.day == day)]
 
-        fsds_jaws = df_sub['shortwave_radiation_down'].tolist()
+        fsds_jaws = df_sub['sw_down'].tolist()
         fsds_jaws = [fillvalue_double if np.isnan(i) else i for i in fsds_jaws]
 
         sza = df_sub['sza'].tolist()
