@@ -50,7 +50,7 @@ def get_time_and_sza(args, dataframe, longitude, latitude):
 	seconds_in_hour = common.seconds_in_hour
 	num_rows = dataframe['year'].size
 
-	month, day, time, time_bounds, sza = ([0] * num_rows for _ in range(5))
+	month, day, time, time_bounds, sza, az = ([0] * num_rows for _ in range(6))
 
 	hour = dataframe['day_of_year']
 	hour = [round(i - int(i), 3) * hour_conversion for i in hour]
@@ -78,9 +78,11 @@ def get_time_and_sza(args, dataframe, longitude, latitude):
 		time[idx] = time[idx] - common.seconds_in_half_hour
 		temp_dtime = datetime.utcfromtimestamp(time[idx])
 
-		sza[idx] = sunposition.sunpos(temp_dtime, latitude, longitude, 0)[1]
+		solar_angles = sunposition.sunpos(temp_dtime, latitude, longitude, 0)
+		az[idx] = solar_angles[0]
+		sza[idx] = solar_angles[1]
 
-	return hour, month, day, time, time_bounds, sza
+	return hour, month, day, time, time_bounds, sza, az
 
 
 def derive_times(dataframe, month, day):
@@ -115,7 +117,7 @@ def imau2nc(args, input_file, output_file, stations):
 	latitude, longitude, station_name = get_station(args, input_file, stations)
 
 	common.log(args, 3, 'Calculating time and sza')
-	hour, month, day, time, time_bounds, sza = get_time_and_sza(
+	hour, month, day, time, time_bounds, sza, az = get_time_and_sza(
 		args, df, longitude, latitude)
 
 	if args.no_drv_tm:
@@ -130,6 +132,7 @@ def imau2nc(args, input_file, output_file, stations):
 	ds['time'] = 'time', time
 	ds['time_bounds'] = ('time', 'nbnd'), time_bounds
 	ds['sza'] = 'time', sza
+	ds['az'] = 'time', az
 	ds['station_name'] = tuple(), station_name
 	ds['latitude'] = tuple(), latitude
 	ds['longitude'] = tuple(), longitude
