@@ -108,15 +108,16 @@ def write_to_file(cons_clr_hrs, daylight, date):
     return final_hrs, clr_lst
 
 
-def main(dataset):
+def main(dataset, args):
     global tg_fsds, dat_sza, dat_fill, hrs, year, clr_lst
 
     clr_lst = []
+    dtime_1970, tz = common.time_common(args.tz)
 
     ds = dataset.drop('time_bounds')
     df = ds.to_dataframe()
 
-    date_hour = [datetime.utcfromtimestamp(i) for i in df.index.values]
+    date_hour = [datetime.fromtimestamp(i, tz) for i in df.index.values]
     dates = [i.date() for i in date_hour]
     dates = sorted(set(dates), key=dates.index)
 
