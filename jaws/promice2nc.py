@@ -178,7 +178,7 @@ def promice2nc(args, input_file, output_file, stations):
 
 		if not clr_df.empty:
 			common.log(args, 7, 'Calculating tilt angle and direction')
-			ds = tilt_angle.main(ds, latitude, longitude, clr_df)
+			ds = tilt_angle.main(ds, latitude, longitude, clr_df, args)
 
 		common.log(args, 8, 'Calculating corrected_fsds')
 		ds = fsds_all.main(ds)
