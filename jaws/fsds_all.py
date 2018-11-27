@@ -2,6 +2,7 @@ import os
 import requests
 
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 
@@ -26,6 +27,7 @@ def main(dataset):
     idx_count = 0
 
     dates = df['time'].tolist()
+    dates = pd.to_datetime(dates)
     dates = [i.date() for i in dates]
     dates = sorted(set(dates), key=dates.index)
 
@@ -43,7 +45,7 @@ def main(dataset):
         day = date.day
 
         ceres_df = xr.open_dataset(stn + '.ceres.nc').to_dataframe()
-        cf = ceres_df.loc[year+'-'+month+'-'+day:year+'-'+month+'-'+day]['cldarea_total_1h'].values.tolist()
+        cf = ceres_df.loc[str(year)+'-'+str(month)+'-'+str(day):str(year)+'-'+str(month)+'-'+str(day)]['cldarea_total_1h'].values.tolist()
         cf = [i/100 for i in cf]
 
         df_sub = df[(df.year == year) & (df.month == month) & (df.day == day)]
