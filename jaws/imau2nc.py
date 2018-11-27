@@ -138,11 +138,14 @@ def imau2nc(args, input_file, output_file, stations):
 	ds['longitude'] = tuple(), longitude
 
 	if args.rigb:
+		common.log(args, 6, 'Detecting clear days')
 		clr_df = clearsky.main(ds, args)
 
 		if not clr_df.empty:
+			common.log(args, 7, 'Calculating tilt angle and direction')
 			ds = tilt_angle.main(ds, latitude, longitude, clr_df)
 
+		common.log(args, 8, 'Calculating corrected_fsds')
 		ds = fsds_all.main(ds)
 
 	comp_level = args.dfl_lvl
