@@ -88,6 +88,9 @@ def main(dataset):
             count += 1
             idx_count += 1
 
+    fsds_corrected_values = df['fsds_corrected'].tolist()
+    dataset['fsds_corrected'] = 'time', fsds_corrected_values
+
     os.remove(stn + '.ceres.nc')
 
-    return ds
+    return dataset
