@@ -1,4 +1,5 @@
 from datetime import datetime
+import requests
 
 import Ngl
 import numpy as np
@@ -66,7 +67,8 @@ def main(dataset, latitude, longitude, clr_df, args):
         current_date_hour = datetime(year, month, day).date()
 
         try:
-            fsds_rrtm = open(grele_path+dir_rrtm+stn+'.'+clrdate.replace('-', '')+'.txt').read().split(',')
+            rrtm_file = requests.get(grele_path+dir_rrtm+stn+'.'+clrdate.replace('-', '')+'.txt')
+            fsds_rrtm = rrtm_file.text.strip().split(',')
             fsds_rrtm = [float(i) for i in fsds_rrtm]
         except:
             continue
