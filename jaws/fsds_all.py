@@ -36,21 +36,21 @@ def main(dataset, args):
     df['fsds_corrected'] = ''
 
     df.reset_index(level=['time'], inplace=True)
-    stn = df['station_name'][0]
+    stn_name = df['station_name'][0]
 
     grele_path = 'http://grele.ess.uci.edu/jaws/rigb_data/'
     dir_ceres = 'ceres/'
     sfx = '.ceres.nc'
-    url = grele_path + dir_ceres + stn + sfx
+    url = grele_path + dir_ceres + stn_name + sfx
     r = requests.get(url, allow_redirects=True)
-    open(stn + sfx, 'wb').write(r.content)
+    open(stn_name + sfx, 'wb').write(r.content)
 
     for date in dates:
         year = date.year
         month = date.month
         day = date.day
 
-        ceres_df = xr.open_dataset(stn + sfx).to_dataframe()
+        ceres_df = xr.open_dataset(stn_name + sfx).to_dataframe()
         cf = ceres_df.loc[str(year)+'-'+str(month)+'-'+str(day):str(year)+'-'+str(month)+'-'+str(day)]['cldarea_total_1h'].values.tolist()
         cf = [i/100 for i in cf]
 
@@ -97,6 +97,6 @@ def main(dataset, args):
     fsds_corrected_values = df['fsds_corrected'].tolist()
     dataset['fsds_corrected'] = 'time', fsds_corrected_values
 
-    os.remove(stn + sfx)
+    os.remove(stn_name + sfx)
 
     return dataset
