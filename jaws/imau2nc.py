@@ -146,7 +146,7 @@ def imau2nc(args, input_file, output_file, stations):
 			ds = tilt_angle.main(ds, latitude, longitude, clr_df, args)
 
 		common.log(args, 8, 'Calculating corrected_fsds')
-		ds = fsds_all.main(ds)
+		ds = fsds_all.main(ds, args)
 
 	comp_level = args.dfl_lvl
 	
