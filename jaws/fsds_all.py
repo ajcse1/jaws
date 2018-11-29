@@ -52,7 +52,7 @@ def main(dataset, args):
 
         ceres_df = xr.open_dataset(stn_name + sfx).to_dataframe()
         cf = ceres_df.loc[str(year)+'-'+str(month)+'-'+str(day):str(year)+'-'+str(month)+'-'+str(day)]['cldarea_total_1h'].values.tolist()
-        cf = [i/100 for i in cf]
+        cf = [0.9999999 if i==100 else i/100 for i in cf]
 
         df_sub = df[(df.year == year) & (df.month == month) & (df.day == day)]
 
