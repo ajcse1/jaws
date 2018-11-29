@@ -130,6 +130,7 @@ def main(dataset, args):
         dat = df_temp['sw_down'].tolist()
         dat_rmvmsng = df_temp['sw_down'].dropna().tolist()
         hrs = list(range(len(dat)))
+        hrs = [i+0.5 for i in hrs]
         hrs_rmvmsng = list(range(len(dat_rmvmsng)))
 
         if len(hrs_rmvmsng) == 0:
