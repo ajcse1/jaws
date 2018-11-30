@@ -34,6 +34,7 @@ def main(dataset, args):
     dates = sorted(set(dates), key=dates.index)
 
     df['fsds_adjusted'] = ''
+    df['cloud_fraction'] = ''
 
     df.reset_index(level=['time'], inplace=True)
     stn_name = df['station_name'][0]
@@ -90,12 +91,15 @@ def main(dataset, args):
                 dnmr = smallest_double
 
             df.at[idx_count, 'fsds_adjusted'] = nmr/dnmr
+            df.at[idx_count, 'cloud_fraction'] = cf[count]
 
             count += 1
             idx_count += 1
 
     fsds_adjusted_values = df['fsds_adjusted'].tolist()
+    cloud_fraction_values = df['cloud_fraction'].tolist()
     dataset['fsds_adjusted'] = 'time', fsds_adjusted_values
+    dataset['cloud_fraction'] = 'time', cloud_fraction_values
 
     os.remove(stn_name + sfx)
 
