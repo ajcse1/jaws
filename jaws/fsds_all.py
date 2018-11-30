@@ -33,7 +33,7 @@ def main(dataset, args):
     dates = [i.date() for i in date_hour]
     dates = sorted(set(dates), key=dates.index)
 
-    df['fsds_corrected'] = ''
+    df['fsds_adjusted'] = ''
 
     df.reset_index(level=['time'], inplace=True)
     stn_name = df['station_name'][0]
@@ -89,13 +89,13 @@ def main(dataset, args):
             if dnmr == 0:
                 dnmr = smallest_double
 
-            df.at[idx_count, 'fsds_corrected'] = nmr/dnmr
+            df.at[idx_count, 'fsds_adjusted'] = nmr/dnmr
 
             count += 1
             idx_count += 1
 
-    fsds_corrected_values = df['fsds_corrected'].tolist()
-    dataset['fsds_corrected'] = 'time', fsds_corrected_values
+    fsds_adjusted_values = df['fsds_adjusted'].tolist()
+    dataset['fsds_adjusted'] = 'time', fsds_adjusted_values
 
     os.remove(stn_name + sfx)
 
