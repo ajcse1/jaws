@@ -133,7 +133,7 @@ def main(dataset, args):
         hrs = [i+0.5 for i in hrs]
         hrs_rmvmsng = list(range(len(dat_rmvmsng)))
 
-        if len(hrs_rmvmsng) == 0:
+        if len(dat_rmvmsng) < 8:
             continue
 
         dat_fill = Ngl.ftcurv(hrs_rmvmsng, dat_rmvmsng, hrs)
