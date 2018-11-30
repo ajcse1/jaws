@@ -186,14 +186,13 @@ def main(dataset, latitude, longitude, clr_df, args):
 
             num_spikes.append(spike_hrs)
 
-        top_pair = best_pairs[num_spikes.index(min(num_spikes))]
+        try:
+            top_pair = best_pairs[num_spikes.index(min(num_spikes))]
 
-
-        # fsds_adjusted.append(fsds_toppair_dict[top_pair])
-        # fsds_diff.append([x-y for x,y in zip(fsds_adjusted, fsds_jaws)])
-
-        tilt_df.at[current_date_hour, 'tilt_direction'] = top_pair[0]
-        tilt_df.at[current_date_hour, 'tilt_angle'] = top_pair[1]
+            tilt_df.at[current_date_hour, 'tilt_direction'] = top_pair[0]
+            tilt_df.at[current_date_hour, 'tilt_angle'] = top_pair[1]
+        except:
+            pass  #Skip day id no top_pair
 
     tilt_df['tilt_direction'] = pd.to_numeric(tilt_df['tilt_direction'], errors='coerce')
     tilt_df['tilt_angle'] = pd.to_numeric(tilt_df['tilt_angle'], errors='coerce')
