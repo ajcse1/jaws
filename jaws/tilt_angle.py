@@ -162,37 +162,40 @@ def main(dataset, latitude, longitude, clr_df, args):
 
         dailyavg_possiblepair_dict = dict(zip(daily_avg_diff, possible_pairs))
 
-        if min(dailyavg_possiblepair_dict.keys()) <= 50:
-            for val in dailyavg_possiblepair_dict.keys():
-                if val <= min(dailyavg_possiblepair_dict.keys())+5:
-                    best_pairs.append(dailyavg_possiblepair_dict.get(val))
+        if not dailyavg_possiblepair_dict.keys():
+            continue
+        else:
+            if min(dailyavg_possiblepair_dict.keys()) <= 50:
+                for val in dailyavg_possiblepair_dict.keys():
+                    if val <= min(dailyavg_possiblepair_dict.keys())+5:
+                        best_pairs.append(dailyavg_possiblepair_dict.get(val))
 
 
-        #########PART-3#############
+            #########PART-3#############
 
-        fsds_toppair_dict = {k: fsds_possiblepair_dict[k] for k in best_pairs}
+            fsds_toppair_dict = {k: fsds_possiblepair_dict[k] for k in best_pairs}
 
-        num_spikes = []
-        for pair in fsds_toppair_dict:
-            fsds_correct_top = fsds_toppair_dict[pair]
-            counter = 0
-            spike_hrs = 0
-            diff_top = [abs(x-y) for x,y in zip(fsds_correct_top, fsds_rrtm)]
-            fsds_rrtm_10 = [ij*0.1 for ij in fsds_rrtm]
-            for val in diff_top:
-                if diff_top[counter] > fsds_rrtm_10[counter]:
-                    spike_hrs += 1
-                counter += 1
+            num_spikes = []
+            for pair in fsds_toppair_dict:
+                fsds_correct_top = fsds_toppair_dict[pair]
+                counter = 0
+                spike_hrs = 0
+                diff_top = [abs(x-y) for x,y in zip(fsds_correct_top, fsds_rrtm)]
+                fsds_rrtm_10 = [ij*0.1 for ij in fsds_rrtm]
+                for val in diff_top:
+                    if diff_top[counter] > fsds_rrtm_10[counter]:
+                        spike_hrs += 1
+                    counter += 1
 
-            num_spikes.append(spike_hrs)
+                num_spikes.append(spike_hrs)
 
-        try:
-            top_pair = best_pairs[num_spikes.index(min(num_spikes))]
+            try:
+                top_pair = best_pairs[num_spikes.index(min(num_spikes))]
 
-            tilt_df.at[current_date_hour, 'tilt_direction'] = top_pair[0]
-            tilt_df.at[current_date_hour, 'tilt_angle'] = top_pair[1]
-        except:
-            pass  #Skip day id no top_pair
+                tilt_df.at[current_date_hour, 'tilt_direction'] = top_pair[0]
+                tilt_df.at[current_date_hour, 'tilt_angle'] = top_pair[1]
+            except:
+                pass  #Skip day id no top_pair
 
     tilt_df['tilt_direction'] = pd.to_numeric(tilt_df['tilt_direction'], errors='coerce')
     tilt_df['tilt_angle'] = pd.to_numeric(tilt_df['tilt_angle'], errors='coerce')
