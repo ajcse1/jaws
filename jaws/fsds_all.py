@@ -73,29 +73,31 @@ def main(dataset, args):
 
         az = deg_to_rad(az)
         alpha = deg_to_rad(alpha)
-        beta = deg_to_rad(beta)
-        aw = deg_to_rad(aw)
+        #beta = deg_to_rad(beta)
+        #aw = deg_to_rad(aw)
 
         count = 0
-        while count < len(alpha):
-            cos_i = (np.cos(alpha[count]) * np.cos(az[count] - aw[count]) * np.sin(beta[count]) + (
-                    np.sin(alpha[count]) * np.cos(beta[count])))
+        try:
+            while count < len(alpha):
+                cos_i = (np.cos(alpha[count]) * np.cos(az[count] - aw[count]) * np.sin(beta[count]) + (
+                        np.sin(alpha[count]) * np.cos(beta[count])))
 
-            ddr = (0.2+0.8*cf[count])/(0.8-0.8*cf[count])
+                ddr = (0.2+0.8*cf[count])/(0.8-0.8*cf[count])
 
-            nmr = fsds_jaws[count] * (np.sin(alpha[count]) + ddr)
+                nmr = fsds_jaws[count] * (np.sin(alpha[count]) + ddr)
 
-            dnmr = cos_i + (ddr * (1 + np.cos(beta[count])) / 2.) + (
-                        rho * (np.sin(alpha[count]) + ddr) * (1 - np.cos(beta[count])) / 2.)
-            if dnmr == 0:
-                dnmr = smallest_double
+                dnmr = cos_i + (ddr * (1 + np.cos(beta[count])) / 2.) + (
+                            rho * (np.sin(alpha[count]) + ddr) * (1 - np.cos(beta[count])) / 2.)
+                if dnmr == 0:
+                    dnmr = smallest_double
 
-            df.at[idx_count, 'fsds_adjusted'] = nmr/dnmr
-            df.at[idx_count, 'cloud_fraction'] = cf[count]
+                df.at[idx_count, 'fsds_adjusted'] = nmr/dnmr
+                df.at[idx_count, 'cloud_fraction'] = cf[count]
 
-            count += 1
-            idx_count += 1
-
+                count += 1
+                idx_count += 1
+        except:
+            pass
     fsds_adjusted_values = df['fsds_adjusted'].tolist()
     cloud_fraction_values = df['cloud_fraction'].tolist()
     dataset['fsds_adjusted'] = 'time', fsds_adjusted_values
