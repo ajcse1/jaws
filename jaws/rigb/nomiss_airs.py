@@ -65,6 +65,7 @@ def get_stn_latlonname(station_file):
 
     latstn = lst_stn['lat'].tolist()
     lonstn = lst_stn['lon'].tolist()
+    lonstn = [360+i if i < 0 else i for i in lonstn]
 
     lat_lon_stn = np.column_stack((latstn, lonstn))
 
