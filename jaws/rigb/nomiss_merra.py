@@ -20,7 +20,7 @@ def get_ds_latlon(infile):
         for j in var_lon:
             lat_lon_var.append([i, j])
 
-    return ds, lat_lon_var
+    return lat_lon_var
 
 
 def haversine_np(latlon1, latlon2):
@@ -104,6 +104,19 @@ def checkna(variable):
         return False
 
 
+def clean_multiple_list(list_name):
+    cleaned_list = [item for sublist in list_name for item in sublist if str(item) != 'nan']
+
+    return cleaned_list
+
+
+def clean_single_list(list_name):
+    cleaned_list = [item for item in list_name if str(item) != 'nan']
+    val = cleaned_list[0]
+
+    return val
+
+
 def main():
     # indir = '/data/wenshanw/merra2/rigb_input/'
     indir = 'C:/Users/Ajay/data/merra2/'
@@ -116,85 +129,113 @@ def main():
 
     stn_names, lat_lon_stn = get_stn_latlonname('../resources/stations_radiation.txt')
 
-    for infile in glob.iglob(indir + '*20020701*.nc'):
+    for infile in glob.iglob(indir + '*.nc'):
 
         print(infile)
 
         x_coord = 0
-        ds, lat_lon_var = get_ds_latlon(infile)
+        lat_lon_var = get_ds_latlon(infile)
         stn_new = haversine_np(lat_lon_stn, lat_lon_var)
 
         for item in stn_new:
+            ds = xr.open_dataset(infile)
             y_coord = 0
+            pout_final, tout_final, qout_final, o3_out_final = ([] for _ in range(4))
 
-            temp = {'lat': round(stn_new[x_coord][y_coord], 1),
-                    'lon': round(stn_new[x_coord][y_coord + 1], 1)
+            temp = {'lat': stn_new[x_coord][y_coord],
+                    'lon': stn_new[x_coord][y_coord + 1]
                     }
-            ds_temp = ds.sel(temp)  # Subset the dataset for only these dimensions
+            try:
+                ds_sub = ds.sel(temp)  # Subset the dataset for only these dimensions
+            except:
+                if stn_new[x_coord][y_coord + 1] == -5.920304394294029e-13:
+                    temp = {'lat': round(stn_new[x_coord][y_coord], 1),
+                            'lon': stn_new[x_coord][y_coord + 1]
+                            }
+                else:
+                    temp = {'lat': round(stn_new[x_coord][y_coord], 1),
+                            'lon': round(stn_new[x_coord][y_coord + 1], 3)
+                            }
+                ds_sub = ds.sel(temp)  # Subset the dataset for only these dimensions
 
-            # Pressure
-            plev = ds_temp['PL'].values.tolist()
-            plev = [i*100 for i in plev]
-            pin[:nplev] = plev[:]
+            hours = [1, 4, 7, 10, 13, 16, 19, 22]
+            for hr in hours:
+                ds_temp = ds_sub.where(ds_sub['time.hour'] == hr)
 
-            ps_merra = ds_temp['PS'].values.tolist()
-            ps_merra = [i*100 for i in ps_merra]
-            if not np.isnan(ps_merra):
-                pin[-1] = ps_merra
+                # Pressure
+                plev = ds_temp['PL'].values.tolist()
+                plev = clean_multiple_list(plev)
+                plev = [i/100 for i in plev]
+                pin[:nplev] = plev[:]
 
-            # Temperature
-            tin[:nplev] = ds_temp['T'].values.tolist()
-            ta_merra = ds_temp['TLML'].values.tolist()
-            if not np.isnan(ta_merra):
-                tin[-1] = ta_merra
+                ps_merra = ds_temp['PS'].values.tolist()
+                ps_merra = clean_single_list(ps_merra)
+                ps_merra = ps_merra/100
+                if not np.isnan(ps_merra):
+                    pin[-1] = ps_merra
 
-            ts_merra = ta_merra
+                # Temperature
+                tin[:nplev] = clean_multiple_list(ds_temp['T'].values.tolist())
+                ta_merra = clean_single_list(ds_temp['TLML'].values.tolist())
+                if not np.isnan(ta_merra):
+                    tin[-1] = ta_merra
 
-            # Water vapor mixing ratio
-            qin[:nplev] = ds_temp['QV'].values.tolist()
-            qs_merra = ds_temp['QLML'].values.tolist()
-            if not np.isnan(qs_merra):
-                qin[-1] = qs_merra
+                ts_merra = ta_merra
 
-            # Ozone
-            o3_merra = ds_temp['O3'].values.tolist()
+                # Water vapor mixing ratio
+                qin[:nplev] = clean_multiple_list(ds_temp['QV'].values.tolist())
+                qs_merra = clean_single_list(ds_temp['QLML'].values.tolist())
+                if not np.isnan(qs_merra):
+                    qin[-1] = qs_merra
 
-            # Get index of all values, where pressure >= surface pressure
-            pressureSafetyMeasure = 5
-            pin_sub = pin[:-1]  # All values except surface pressure
-            x = 0
-            idx_lst = []
-            for val in pin_sub:
-                if val > (pin[-1] - pressureSafetyMeasure):
-                    idx_lst.append(pin_sub.index(pin_sub[x]))
-                x += 1
+                # Ozone
+                o3_merra = clean_multiple_list(ds_temp['O3'].values.tolist())
 
-            # Set the values at above indexes as missing
-            for idx in idx_lst:
-                for lst in [pin, tin, qin]:
-                    lst[idx] = None
+                # Get index of all values, where pressure >= surface pressure
+                pressureSafetyMeasure = 5
+                pin_sub = pin[:-1]  # All values except surface pressure
+                x = 0
+                idx_lst = []
+                for val in pin_sub:
+                    if val > (pin[-1] - pressureSafetyMeasure):
+                        idx_lst.append(pin_sub.index(pin_sub[x]))
+                    x += 1
 
-            # Interpolate the above missing values
-            pin = pd.Series(pin)
-            pin = pin.interpolate(limit_direction='both').values.tolist()
-            pout = pin[:-1]
+                # Set the values at above indexes as missing
+                for idx in idx_lst:
+                    for lst in [pin, tin, qin]:
+                        lst[idx] = None
 
-            aod_count = 0
-            for press in pout:
-                if (pin[-1] - 100) < press < pin[-1]:
-                    aod_count += 1
+                # Interpolate the above missing values
+                pin = pd.Series(pin)
+                pin = pin.interpolate(limit_direction='both').values.tolist()
+                pout = pin[:-1]
 
-            # If more than (2/3)rd values are missing for any variable, skip that day
-            if checkna(tin) and checkna(qin) and checkna(o3_merra):
-                tout = log_interpolation(tin)
-                qout = log_interpolation(qin)
-                o3_out = log_interpolation(o3_merra, plev=plev, pout=pout)
-            else:
-                x_coord += 1
+                aod_count = 0
+                for press in pout:
+                    if (pin[-1] - 100) < press < pin[-1]:
+                        aod_count += 1
+
+                # If more than (2/3)rd values are missing for any variable, skip that day
+                if checkna(tin) and checkna(qin) and checkna(o3_merra):
+                    tout = log_interpolation(tin)
+                    qout = log_interpolation(qin)
+                    o3_out = log_interpolation(o3_merra, plev=plev, pout=pout)
+                else:
+                    x_coord += 1
+                pout_final.append(pout)
+                tout_final.append(tout)
+                qout_final.append(qout)
+                o3_out_final.append(o3_out)
+
+            pout_final = clean_multiple_list(pout_final)
+            tout_final = clean_multiple_list(tout_final)
+            qout_final = clean_multiple_list(qout_final)
+            o3_out_final = clean_multiple_list(o3_out_final)
 
             # Write variables to xarray-dataset
-            ds = xr.Dataset({'plev': ('PLEV', pout), 't': ('PLEV', tout), 'q': ('PLEV', qout),
-                             'o3': ('PLEV', o3_out), 'ts': ts_merra, 'ta': tin[-1], 'ps': ps_merra,
+            ds = xr.Dataset({'plev': ('PLEV', pout_final), 't': ('PLEV', tout_final), 'q': ('PLEV', qout_final),
+                             'o3': ('PLEV', o3_out_final), 'ts': ts_merra, 'ta': tin[-1], 'ps': ps_merra,
                              'aod_count': aod_count})
 
             # Write to netCDF file
