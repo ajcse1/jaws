@@ -242,7 +242,7 @@ def main():
             if not os.path.exists(outdir):
                 os.makedirs(outdir)
             basename = os.path.basename(infile)
-            outfile = outdir + '/' + stn_names[x_coord] + '.' + basename[5:15].replace('.', '') + '.nc'
+            outfile = outdir + '/' + stn_names[x_coord] + '.' + basename[-15:-7] + '.nc'
 
             ds.to_netcdf(outfile)
 
