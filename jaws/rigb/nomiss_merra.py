@@ -120,7 +120,7 @@ def clean_single_list(list_name):
 def main():
     # indir = '/data/wenshanw/merra2/rigb_input/'
     indir = 'C:/Users/Ajay/data/merra2/'
-    outdir = 'merra_nomiss-airx3std'
+    outdir = 'nomiss-merra'
 
     nplev = 72
 
