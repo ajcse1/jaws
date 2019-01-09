@@ -223,19 +223,16 @@ def main():
                     o3_out = log_interpolation(o3_merra, plev=plev, pout=pout)
                 else:
                     x_coord += 1
+                    continue
+
                 pout_final.append(pout)
                 tout_final.append(tout)
                 qout_final.append(qout)
                 o3_out_final.append(o3_out)
 
-            pout_final = clean_multiple_list(pout_final)
-            tout_final = clean_multiple_list(tout_final)
-            qout_final = clean_multiple_list(qout_final)
-            o3_out_final = clean_multiple_list(o3_out_final)
-
             # Write variables to xarray-dataset
-            ds = xr.Dataset({'plev': ('PLEV', pout_final), 't': ('PLEV', tout_final), 'q': ('PLEV', qout_final),
-                             'o3': ('PLEV', o3_out_final), 'ts': ts_merra, 'ta': tin[-1], 'ps': ps_merra,
+            ds = xr.Dataset({'plev': (('time', 'PLEV'), pout_final), 't': (('time', 'PLEV'), tout_final), 'q': (('time', 'PLEV'), qout_final),
+                             'o3': (('time', 'PLEV'), o3_out_final), 'ts': ts_merra, 'ta': tin[-1], 'ps': ps_merra,
                              'aod_count': aod_count})
 
             # Write to netCDF file
