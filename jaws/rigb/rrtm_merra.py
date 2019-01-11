@@ -121,7 +121,7 @@ def main():
             # knob
             aod = np.zeros((6, 1, 72))
             aod[1, 0, -aod_count:] = 0.12 / aod_count
-            aod[5, 0, :15] = 0.0077 / 15
+            aod[5, 0, :20] = 0.0077 / 20
 
             idx = 0
 
