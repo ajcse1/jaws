@@ -12,6 +12,9 @@ import xarray as xr
 
 import sunposition
 
+import warnings
+warnings.filterwarnings('ignore')
+
 '''
 Run RRTM using processed MERRA data from nomiss_merra.py
 - run for 8 hour and interpolate for 24 hours
@@ -48,6 +51,7 @@ def main():
         os.makedirs(outdir)
 
     # constants
+    fillvalue_float = 9.96921e+36
     alb = 0.75
     emis = 0.985
     solar_constant = 1367.0
@@ -74,16 +78,10 @@ def main():
     lonstn = -38.50454
     nstn = 1'''
 
-    start_year = 2002
-    end_year = 2003
-    years = [str(i) for i in list(range(start_year, end_year, 1))]
-    months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
-    days = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10',
-            '11', '12', '13', '14', '15', '16', '17', '18', '19', '20',
-            '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31']
-
     hours_merra = [1, 4, 7, 10, 13, 16, 19, 22]
     hours_24 = list(range(24))
+
+    cleardays = pd.read_csv('cleardays.csv')
 
     # main function
     for i in range(nstn):
@@ -94,64 +92,84 @@ def main():
         lat_deg = latstn
         lon_deg = lonstn'''
 
-        for year in years:
-            for month in months:
-                for day in days:
-                    sw_dn = []
+        fout = outdir + stn + '.nc'
+        sw_dn_complete = []
+        time_op = []
 
-                    flname = indir + stn + '.' + str(year) + str(month) + str(day) + '.nc'
+        clr_dates = cleardays.loc[cleardays['network_name'] == stn, 'date']
 
-                    if not os.path.isfile(flname):
-                        continue
+        for date in clr_dates:
+            sw_dn = []
 
-                    print(flname)
-                    fl_date = flname.split('.')[1]
+            flname = indir + stn + '.' + str(date) + '.nc'
 
-                    fin = xr.open_dataset(flname)
-                    fout = outdir + stn + '.' + fl_date + '.txt'
+            if not os.path.isfile(flname):
+                continue
 
-                    tmp = fin['t'].values
-                    ts = fin['ts'].values
-                    plev = fin['plev'].values
-                    ps = fin['ps'].values
-                    h2o_q = fin['q'].values
-                    o3_mmr = fin['o3'].values
-                    o3_vmr = climlab.utils.thermo.mmr_to_vmr(o3_mmr, gas='O3')
+            fin = xr.open_dataset(flname)
 
-                    aod_count = fin['aod_count'].values
+            tmp = fin['t'].values
+            ts = fin['ts'].values
+            plev = fin['plev'].values
+            ps = fin['ps'].values
+            h2o_q = fin['q'].values
+            o3_mmr = fin['o3'].values
+            o3_vmr = climlab.utils.thermo.mmr_to_vmr(o3_mmr, gas='O3')
 
-                    # knob
-                    aod = np.zeros((6, 1, 72))
-                    aod[1, 0, -aod_count:] = 0.12 / aod_count
-                    aod[5, 0, :15] = 0.0077 / 15
+            aod_count = fin['aod_count'].values
 
-                    idx = 0
+            # knob
+            aod = np.zeros((6, 1, 72))
+            aod[1, 0, -aod_count:] = 0.12 / aod_count
+            aod[5, 0, :15] = 0.0077 / 15
 
-                    for hr in hours_merra:
-                        dtime = datetime.strptime(fl_date, "%Y%m%d") + timedelta(hours=hr, minutes=30)
+            idx = 0
 
-                        sza = sunposition.sunpos(dtime, lat_deg, lon_deg, 0)[1]
-                        cossza = np.cos(np.radians(sza))
+            for hr in hours_merra:
+                dtime = datetime.strptime(str(date), "%Y%m%d") + timedelta(hours=hr, minutes=30)
 
-                        state = make_column(lev=plev[idx], ps=ps, tmp=tmp[idx], ts=ts)
-                        absorber_vmr['O3'] = o3_vmr[idx]
+                sza = sunposition.sunpos(dtime, lat_deg, lon_deg, 0)[1]
+                cossza = np.cos(np.radians(sza))
 
-                        rad = climlab.radiation.RRTMG(name='Radiation', state=state, specific_humidity=h2o_q[idx],
-                                                      albedo=alb, coszen=cossza, absorber_vmr=absorber_vmr,
-                                                      emissivity=emis, S0=solar_constant, icld=0, iaer=6,
-                                                      ecaer_sw=aod)
-                        rad.compute_diagnostics()
+                state = make_column(lev=plev[idx], ps=ps, tmp=tmp[idx], ts=ts)
+                absorber_vmr['O3'] = o3_vmr[idx]
 
-                        dout = rad.to_xarray(diagnostics=True)
-                        sw_dn.append(dout['SW_flux_down_clr'].values[-1])
+                rad = climlab.radiation.RRTMG(name='Radiation', state=state, specific_humidity=h2o_q[idx],
+                                              albedo=alb, coszen=cossza, absorber_vmr=absorber_vmr,
+                                              emissivity=emis, S0=solar_constant, icld=0, iaer=6,
+                                              ecaer_sw=aod)
+                rad.compute_diagnostics()
 
-                        idx += 1
+                dout = rad.to_xarray(diagnostics=True)
+                sw_dn.append(dout['SW_flux_down_clr'].values[-1])
 
-                    sw_dn_24 = CubicSpline(hours_merra, sw_dn, extrapolate=True)(hours_24)
+                idx += 1
 
-                    with open(fout, 'w') as outfile:
-                        wr = csv.writer(outfile)
-                        wr.writerow(sw_dn_24)
+            sw_dn_24 = CubicSpline(hours_merra, sw_dn, extrapolate=True)(hours_24)
+            sw_dn_complete.append(sw_dn_24)
+
+            for hr in range(24):
+                time_op.append(datetime.strptime(str(date), "%Y%m%d") + timedelta(hours=hr, minutes=30))
+
+        # Combine fsds for multiple days into single list
+        sw_dn_complete = [item for sublist in sw_dn_complete for item in sublist]
+
+        # Get seconds since 1970
+        time_op = [(i - datetime(1970, 1, 1)).total_seconds() for i in time_op]
+
+        if sw_dn_complete:  # Write data
+            ds = xr.Dataset()
+
+            ds['fsds'] = 'time', sw_dn_complete
+            ds['time'] = 'time', time_op
+
+            ds['fsds'].attrs = {"_FillValue": fillvalue_float, "units": 'watt meter-2',
+                                "long_name": 'RRTM simulated shortwave downwelling radiation at surface'}
+            ds['time'].attrs = {"_FillValue": fillvalue_float, "units": 'seconds since 1970-01-01 00:00:00',
+                                "calendar": 'standard'}
+
+            ds.to_netcdf(fout)
+            print(fout)
 
 
 if __name__ == '__main__':
