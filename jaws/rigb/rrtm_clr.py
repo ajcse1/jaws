@@ -1,4 +1,3 @@
-import csv
 from datetime import datetime, timedelta
 import os
 
@@ -10,6 +9,9 @@ import pandas as pd
 import xarray as xr
 
 import sunposition
+
+import warnings
+warnings.filterwarnings('ignore')
 
 '''
 Run RRTM using processed AIRS data from nomiss_airs.py
@@ -47,6 +49,7 @@ def main():
         os.makedirs(outdir)
 
     # constants
+    fillvalue_float = 9.96921e+36
     alb = 0.75
     emis = 0.985
     solar_constant = 1367.0
@@ -62,7 +65,7 @@ def main():
     absorber_vmr['CCL4'] = 0.
 
     # stn names and lat/lon
-    lst_stn = pd.read_csv('stations_radiation.txt')
+    lst_stn = pd.read_csv('../resources/stations_radiation.txt')
     stn_names = lst_stn['network_name'].tolist()
     latstn = lst_stn['lat'].tolist()
     lonstn = lst_stn['lon'].tolist()
@@ -73,13 +76,7 @@ def main():
     lonstn = 0.0
     nstn = 1'''
 
-    start_year = 2010
-    end_year = 2017
-    years = [str(i) for i in list(range(start_year, end_year, 1))]
-    months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
-    days = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10',
-            '11', '12', '13', '14', '15', '16', '17', '18', '19', '20',
-            '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31']
+    cleardays = pd.read_csv('cleardays.csv')
 
     # main function
     for i in range(nstn):
@@ -90,71 +87,93 @@ def main():
         lat_deg = latstn
         lon_deg = lonstn'''
 
-        for year in years:
-            for month in months:
-                for day in days:
-                    try:
-                        sw_dn = []
-                        sw_dn_final = [None]*24
-                        for sfx in ['A', 'D']:
-                            flname = indir + stn + '.' + str(year) + str(month) + str(day) + '.' + sfx + '.nc'
+        fout = outdir + stn + '.nc'
+        sw_dn_complete = []
+        time_op = []
 
-                            if not os.path.isfile(flname):
-                                continue
+        clr_dates = cleardays.loc[cleardays['network_name'] == stn, 'date']
 
-                            fin = xr.open_dataset(flname)
-                            fout = outdir + stn + '.' + flname.split('.')[1] + '.txt'
+        for date in clr_dates:
+            sw_dn = []
+            sw_dn_final = [None]*24
+            for sfx in ['A', 'D']:
+                flname = indir + stn + '.' + str(date) + '.' + sfx + '.nc'
 
-                            tmp = fin['t'].values
-                            # ts = fin['sfc_tmp'].values
-                            ts = fin['ts'].values
-                            plev = fin['plev'].values
-                            # ps = fin['sfc_prs'].values
-                            ps = fin['ps'].values
+                if not os.path.isfile(flname):  # Check if nomiss file exists
+                    continue
 
-                            state = make_column(lev=plev, ps=ps, tmp=tmp, ts=ts)
+                fin = xr.open_dataset(flname)
 
-                            o3 = fin['o3'].values
-                            absorber_vmr['O3'] = o3
+                # Get values from nomiss netCDF file
+                tmp = fin['t'].values
+                ts = fin['ts'].values
+                plev = fin['plev'].values
+                ps = fin['ps'].values
 
-                            h2o_q = fin['q'].values
+                state = make_column(lev=plev, ps=ps, tmp=tmp, ts=ts)
 
-                            aod_count = fin['aod_count'].values
+                o3 = fin['o3'].values
+                absorber_vmr['O3'] = o3
 
-                            # knob
-                            aod = np.zeros((6, 1, 24))
-                            aod[1, 0, -aod_count:] = 0.12 / aod_count
-                            aod[5, 0, :15] = 0.0077 / 15
+                h2o_q = fin['q'].values
 
-                            for hr in range(24):
-                                dtime = datetime.strptime(flname.split('.')[1], "%Y%m%d") + timedelta(hours=hr, minutes=30)
+                aod_count = fin['aod_count'].values
 
-                                sza = sunposition.sunpos(dtime, lat_deg, lon_deg, 0)[1]
-                                cossza = np.cos(np.radians(sza))
+                # knob
+                aod = np.zeros((6, 1, 24))
+                aod[1, 0, -aod_count:] = 0.12 / aod_count
+                aod[5, 0, :15] = 0.0077 / 15
 
-                                rad = climlab.radiation.RRTMG(name='Radiation', state=state, specific_humidity=h2o_q,
-                                                              albedo=alb, coszen=cossza, absorber_vmr=absorber_vmr,
-                                                              emissivity=emis, S0=solar_constant, icld=0, iaer=6,
-                                                              ecaer_sw=aod)
-                                rad.compute_diagnostics()
+                # Calculate shortwave radiation down for each hour
+                for hr in range(24):
+                    dtime = datetime.strptime(flname.split('.')[1], "%Y%m%d") + timedelta(hours=hr, minutes=30)
 
-                                dout = rad.to_xarray(diagnostics=True)
-                                sw_dn.append(dout['SW_flux_down_clr'].values[-1])
+                    sza = sunposition.sunpos(dtime, lat_deg, lon_deg, 0)[1]
+                    cossza = np.cos(np.radians(sza))
 
-                        if len(sw_dn) == 24:
-                            sw_dn_final = sw_dn  # If only either 'A' or 'D' file present
-                        else:
-                            count = 0
-                            while count < 24:
-                                sw_dn_final[count] = (sw_dn[count]+sw_dn[count+24])/2.0
-                                count += 1
+                    rad = climlab.radiation.RRTMG(name='Radiation', state=state, specific_humidity=h2o_q,
+                                                  albedo=alb, coszen=cossza, absorber_vmr=absorber_vmr,
+                                                  emissivity=emis, S0=solar_constant, icld=0, iaer=6,
+                                                  ecaer_sw=aod)
+                    rad.compute_diagnostics()
 
-                        with open(fout, 'w') as outfile:
-                            wr = csv.writer(outfile)
-                            wr.writerow(sw_dn_final)
+                    dout = rad.to_xarray(diagnostics=True)
+                    sw_dn.append(dout['SW_flux_down_clr'].values[-1])
 
-                    except:
-                        pass
+            if sw_dn:
+                if len(sw_dn) == 24:
+                    sw_dn_final = sw_dn  # If only either 'A' or 'D' file present
+                else:
+                    count = 0
+                    while count < 24:
+                        sw_dn_final[count] = (sw_dn[count]+sw_dn[count+24])/2.0  # Average of both 'A' and 'D'
+                        count += 1
+
+                sw_dn_complete.append(sw_dn_final)  # Combine sw_dn_final for multiple days in a single variable
+
+                for hr in range(24):  # Time variable to be written in netCDF file
+                    time_op.append(datetime.strptime(str(date), "%Y%m%d") + timedelta(hours=hr, minutes=30))
+
+        if sw_dn_complete:  # Write data
+
+            # Make single list from list of lists
+            sw_dn_complete = [item for sublist in sw_dn_complete for item in sublist]
+
+            # Get seconds since 1970
+            time_op = [(i - datetime(1970, 1, 1)).total_seconds() for i in time_op]
+
+            ds = xr.Dataset()
+
+            ds['fsds'] = 'time', sw_dn_complete
+            ds['time'] = 'time', time_op
+
+            ds['fsds'].attrs = {"_FillValue": fillvalue_float, "units": 'watt meter-2',
+                                "long_name": 'RRTM simulated shortwave downwelling radiation at surface'}
+            ds['time'].attrs = {"_FillValue": fillvalue_float, "units": 'seconds since 1970-01-01 00:00:00',
+                                "calendar": 'standard'}
+
+            ds.to_netcdf(fout)
+            print(fout)
 
 
 if __name__ == '__main__':
