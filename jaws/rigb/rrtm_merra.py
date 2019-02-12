@@ -134,7 +134,7 @@ def main():
                 sza = sunposition.sunpos(dtime, lat_deg, lon_deg, 0)[1]
                 cossza = np.cos(np.radians(sza))
 
-                state = make_column(lev=plev[idx], ps=ps, tmp=tmp[idx], ts=ts)
+                state = make_column(lev=plev[idx], ps=ps[idx], tmp=tmp[idx], ts=ts[idx])
                 absorber_vmr['O3'] = o3_vmr[idx]
 
                 rad = climlab.radiation.RRTMG(name='Radiation', state=state, specific_humidity=h2o_q[idx],
