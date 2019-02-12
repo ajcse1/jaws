@@ -96,17 +96,20 @@ def main():
         sw_dn_complete = []
         time_op = []
 
+        flname = indir + stn + '.' + 'merra2.inst3.asm.1991-2018' + '.nc'
+
         clr_dates = cleardays.loc[cleardays['network_name'] == stn, 'date']
 
         for date in clr_dates:
             sw_dn = []
 
-            flname = indir + stn + '.' + str(date) + '.nc'
+            '''flname = indir + stn + '.' + str(date) + '.nc'
 
             if not os.path.isfile(flname):
-                continue
+                continue'''
 
             fin = xr.open_dataset(flname)
+            fin = fin.sel(time=str(date))
 
             tmp = fin['t'].values
             ts = fin['ts'].values
