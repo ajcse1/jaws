@@ -119,10 +119,10 @@ def main():
             o3_mmr = fin['o3'].values
             o3_vmr = climlab.utils.thermo.mmr_to_vmr(o3_mmr, gas='O3')
 
-            aod_count = fin['aod_count'].values
+            aod_count = int(fin['aod_count'].values[0])
 
             # knob
-            aod = np.zeros((6, 1, 72))
+            aod = np.zeros((6, 1, 42))
             aod[1, 0, -aod_count:] = 0.12 / aod_count
             aod[5, 0, :20] = 0.0077 / 20
 
