@@ -92,7 +92,7 @@ def main():
         lat_deg = latstn
         lon_deg = lonstn'''
 
-        fout = outdir + stn + '.nc'
+        fout = outdir + stn + '.rrtm.nc'
         sw_dn_complete = []
         time_op = []
 
