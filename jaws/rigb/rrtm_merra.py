@@ -94,6 +94,9 @@ def main():
 
         fout = outdir + stn + '.rrtm.nc'
         sw_dn_complete = []
+        sw_up_complete = []
+        lw_dn_complete = []
+        lw_up_complete = []
         time_op = []
 
         flname = indir + stn + '.' + 'merra2.inst3.asm.1991-2018' + '.nc'
@@ -102,6 +105,9 @@ def main():
 
         for date in clr_dates:
             sw_dn = []
+            sw_up = []
+            lw_dn = []
+            lw_up = []
 
             '''flname = indir + stn + '.' + str(date) + '.nc'
 
@@ -145,17 +151,30 @@ def main():
 
                 dout = rad.to_xarray(diagnostics=True)
                 sw_dn.append(dout['SW_flux_down_clr'].values[-1])
+                sw_up.append(dout['SW_flux_up_clr'].values[-1])
+                lw_dn.append(dout['LW_flux_down_clr'].values[-1])
+                lw_up.append(dout['LW_flux_up_clr'].values[-1])
 
                 idx += 1
 
             sw_dn_24 = CubicSpline(hours_merra, sw_dn, extrapolate=True)(hours_24)
+            sw_up_24 = CubicSpline(hours_merra, sw_up, extrapolate=True)(hours_24)
+            lw_dn_24 = CubicSpline(hours_merra, lw_dn, extrapolate=True)(hours_24)
+            lw_up_24 = CubicSpline(hours_merra, lw_up, extrapolate=True)(hours_24)
+
             sw_dn_complete.append(sw_dn_24)
+            sw_up_complete.append(sw_up_24)
+            lw_dn_complete.append(lw_dn_24)
+            lw_up_complete.append(lw_up_24)
 
             for hr in range(24):
                 time_op.append(datetime.strptime(str(date), "%Y%m%d") + timedelta(hours=hr, minutes=30))
 
         # Combine fsds for multiple days into single list
         sw_dn_complete = [item for sublist in sw_dn_complete for item in sublist]
+        sw_up_complete = [item for sublist in sw_up_complete for item in sublist]
+        lw_dn_complete = [item for sublist in lw_dn_complete for item in sublist]
+        lw_up_complete = [item for sublist in lw_up_complete for item in sublist]
 
         # Get seconds since 1970
         time_op = [(i - datetime(1970, 1, 1)).total_seconds() for i in time_op]
@@ -164,10 +183,19 @@ def main():
             ds = xr.Dataset()
 
             ds['fsds'] = 'time', sw_dn_complete
+            ds['fsus'] = 'time', sw_up_complete
+            ds['flds'] = 'time', lw_dn_complete
+            ds['flus'] = 'time', lw_up_complete
             ds['time'] = 'time', time_op
 
             ds['fsds'].attrs = {"_FillValue": fillvalue_float, "units": 'watt meter-2',
                                 "long_name": 'RRTM simulated shortwave downwelling radiation at surface'}
+            ds['fsus'].attrs = {"_FillValue": fillvalue_float, "units": 'watt meter-2',
+                                "long_name": 'RRTM simulated shortwave upwelling radiation at surface'}
+            ds['flds'].attrs = {"_FillValue": fillvalue_float, "units": 'watt meter-2',
+                                "long_name": 'RRTM simulated longwave downwelling radiation at surface'}
+            ds['flus'].attrs = {"_FillValue": fillvalue_float, "units": 'watt meter-2',
+                                "long_name": 'RRTM simulated longwave upwelling radiation at surface'}
             ds['time'].attrs = {"_FillValue": fillvalue_float, "units": 'seconds since 1970-01-01 00:00:00',
                                 "calendar": 'standard'}
 
