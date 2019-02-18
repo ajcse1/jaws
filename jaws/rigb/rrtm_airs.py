@@ -89,15 +89,25 @@ def main():
 
         fout = outdir + stn + '.rrtm.nc'
         sw_dn_complete = []
+        sw_up_complete = []
+        lw_dn_complete = []
+        lw_up_complete = []
         time_op = []
 
         clr_dates = cleardays.loc[cleardays['network_name'] == stn, 'date']
 
         for date in clr_dates:
             sw_dn = []
+            sw_up = []
+            lw_dn = []
+            lw_up = []
+
             sw_dn_final = [None]*24
+            sw_up_final = [None]*24
+            lw_dn_final = [None]*24
+            lw_up_final = [None]*24
             for sfx in ['A', 'D']:
-                flname = indir + stn + '.' + str(date) + '.' + sfx + '.nc'
+                flname = indir + stn + '/' + stn + '.' + str(date) + '.' + sfx + '.nc'
 
                 if not os.path.isfile(flname):  # Check if nomiss file exists
                     continue
@@ -139,17 +149,29 @@ def main():
 
                     dout = rad.to_xarray(diagnostics=True)
                     sw_dn.append(dout['SW_flux_down_clr'].values[-1])
+                    sw_up.append(dout['SW_flux_up_clr'].values[-1])
+                    lw_dn.append(dout['LW_flux_down_clr'].values[-1])
+                    lw_up.append(dout['LW_flux_up_clr'].values[-1])
 
             if sw_dn:
                 if len(sw_dn) == 24:
                     sw_dn_final = sw_dn  # If only either 'A' or 'D' file present
+                    sw_up_final = sw_up  # If only either 'A' or 'D' file present
+                    lw_dn_final = lw_dn  # If only either 'A' or 'D' file present
+                    lw_up_final = lw_up  # If only either 'A' or 'D' file present
                 else:
                     count = 0
                     while count < 24:
                         sw_dn_final[count] = (sw_dn[count]+sw_dn[count+24])/2.0  # Average of both 'A' and 'D'
+                        sw_up_final[count] = (sw_up[count]+sw_up[count+24])/2.0  # Average of both 'A' and 'D'
+                        lw_dn_final[count] = (lw_dn[count]+lw_dn[count+24])/2.0  # Average of both 'A' and 'D'
+                        lw_up_final[count] = (lw_up[count]+lw_up[count+24])/2.0  # Average of both 'A' and 'D'
                         count += 1
 
                 sw_dn_complete.append(sw_dn_final)  # Combine sw_dn_final for multiple days in a single variable
+                sw_up_complete.append(sw_up_final)  # Combine sw_up_final for multiple days in a single variable
+                lw_dn_complete.append(lw_dn_final)  # Combine lw_dn_final for multiple days in a single variable
+                lw_up_complete.append(lw_up_final)  # Combine lw_up_final for multiple days in a single variable
 
                 for hr in range(24):  # Time variable to be written in netCDF file
                     time_op.append(datetime.strptime(str(date), "%Y%m%d") + timedelta(hours=hr, minutes=30))
@@ -158,6 +180,9 @@ def main():
 
             # Make single list from list of lists
             sw_dn_complete = [item for sublist in sw_dn_complete for item in sublist]
+            sw_up_complete = [item for sublist in sw_up_complete for item in sublist]
+            lw_dn_complete = [item for sublist in lw_dn_complete for item in sublist]
+            lw_up_complete = [item for sublist in lw_up_complete for item in sublist]
 
             # Get seconds since 1970
             time_op = [(i - datetime(1970, 1, 1)).total_seconds() for i in time_op]
@@ -165,10 +190,19 @@ def main():
             ds = xr.Dataset()
 
             ds['fsds'] = 'time', sw_dn_complete
+            ds['fsus'] = 'time', sw_up_complete
+            ds['flds'] = 'time', lw_dn_complete
+            ds['flus'] = 'time', lw_up_complete
             ds['time'] = 'time', time_op
 
             ds['fsds'].attrs = {"_FillValue": fillvalue_float, "units": 'watt meter-2',
                                 "long_name": 'RRTM simulated shortwave downwelling radiation at surface'}
+            ds['fsus'].attrs = {"_FillValue": fillvalue_float, "units": 'watt meter-2',
+                                "long_name": 'RRTM simulated shortwave upwelling radiation at surface'}
+            ds['flds'].attrs = {"_FillValue": fillvalue_float, "units": 'watt meter-2',
+                                "long_name": 'RRTM simulated longwave downwelling radiation at surface'}
+            ds['flus'].attrs = {"_FillValue": fillvalue_float, "units": 'watt meter-2',
+                                "long_name": 'RRTM simulated longwave upwelling radiation at surface'}
             ds['time'].attrs = {"_FillValue": fillvalue_float, "units": 'seconds since 1970-01-01 00:00:00',
                                 "calendar": 'standard'}
 
